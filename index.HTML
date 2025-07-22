@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام كرامة | الجمعية الكويتية لحقوق الإنسان</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+
+    <style>
+        body { background-color: #f8fafc; font-family: 'Cairo', sans-serif; }
+        :root { --primary-color: #0ea5e9; --sidebar-bg: #ffffff; --sidebar-text: #334155; --sidebar-hover-bg: #f1f5f9; --sidebar-active-bg: #e0f2fe; --sidebar-active-text: #0369a1; }
+        .btn-primary { @apply bg-gradient-to-r from-sky-500 to-cyan-500 text-white font-bold py-2 px-5 rounded-lg hover:from-sky-600 hover:to-cyan-600 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-px flex items-center gap-2 justify-center; }
+        .btn-secondary { @apply bg-gray-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-600 transition-all flex items-center gap-2 justify-center; }
+        .btn-action { @apply bg-gradient-to-r from-emerald-500 to-green-500 text-white font-bold py-2 px-4 rounded-lg hover:from-emerald-600 hover:to-green-600 transition-all flex items-center gap-2 justify-center; }
+        .btn-print { @apply bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-bold py-2 px-4 rounded-lg hover:from-indigo-600 hover:to-purple-600 transition-all flex items-center gap-2 justify-center; }
+        .btn-gemini { @apply bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold py-2 px-4 rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all flex items-center gap-2 justify-center; }
+        .btn-whatsapp { @apply bg-green-500 text-white p-2 rounded-full hover:bg-green-600 transition-all shadow-md; }
+        .sidebar { transition: transform 0.3s ease-in-out; background-color: var(--sidebar-bg); color: var(--sidebar-text); border-left: 1px solid #e2e8f0; }
+        .nav-link { transition: all 0.2s ease; border-right: 4px solid transparent; color: var(--sidebar-text); font-weight: 600; }
+        .nav-link.active { background-color: var(--sidebar-active-bg); color: var(--sidebar-active-text); border-right-color: var(--primary-color); }
+        .nav-link:not(.active):hover { background-color: var(--sidebar-hover-bg); color: var(--sidebar-active-text); }
+        .sidebar-heading { @apply mt-6 mb-2 px-3 text-xs text-gray-400 uppercase font-bold tracking-wider; }
+        .page { display: none; animation: fadeIn 0.5s; }
+        .page.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .modal-overlay { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(4px); align-items: center; justify-content: center; }
+        .modal-content { background-color: #fefefe; padding: 2rem; border-radius: 0.5rem; animation: slideIn 0.4s; max-height: 90vh; overflow-y: auto; width: 90%; }
+        @keyframes slideIn { from { transform: translateY(-50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .stat-card { transition: all 0.3s ease; border-left-width: 5px; }
+        .stat-card:hover { transform: translateY(-5px) scale(1.02); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
+        #toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 2000; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+        .toast { padding: 1rem 1.5rem; border-radius: 0.5rem; color: white; font-weight: bold; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); transition: all 0.5s ease-in-out; opacity: 0; transform: translateY(-20px); }
+        .toast.show { opacity: 1; transform: translateY(0); }
+        .toast.bg-warning { background-color: #f59e0b; }
+        .dropdown { position: relative; display: inline-block; }
+        .dropdown-content { display: none; position: absolute; background-color: #f9f9f9; min-width: 160px; box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2); z-index: 1; border-radius: 0.5rem; overflow: hidden; }
+        .dropdown-content a { color: black; padding: 12px 16px; text-decoration: none; display: block; text-align: right; }
+        .dropdown-content a:hover { background-color: #f1f1f1; }
+        .dropdown:hover .dropdown-content { display: block; }
+        .notification-bell { position: relative; }
+        .notification-badge { position: absolute; top: -5px; right: -5px; background-color: #ef4444; color: white; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; display: flex; align-items: center; justify-content: center; border: 2px solid white; }
+        .notification-dropdown { display: none; position: absolute; top: 100%; left: 0; background-color: white; min-width: 300px; box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2); z-index: 10; border-radius: 0.5rem; overflow: hidden; max-height: 400px; overflow-y: auto; }
+        .notification-dropdown.show { display: block; }
+        @media screen and (max-width: 768px) { table.responsive-table thead { display: none; } table.responsive-table tr { display: block; margin-bottom: 1rem; border: 1px solid #ddd; border-radius: 0.5rem; overflow: hidden; } table.responsive-table td { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; border-bottom: 1px solid #eee; text-align: right; } table.responsive-table td:last-child { border-bottom: 0; } table.responsive-table td::before { content: attr(data-label); font-weight: bold; padding-left: 1rem; text-align: left; } }
+        @media print { body * { visibility: hidden; } .print-area, .print-area * { visibility: visible; } .print-area { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 1rem; border: none; } .no-print { display: none !important; } }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <div id="login-overlay" class="fixed inset-0 bg-gray-900 bg-opacity-60 backdrop-blur-sm z-50 flex items-center justify-center">
+        <div class="bg-white p-8 rounded-lg shadow-2xl text-center w-full max-w-sm">
+            <img src="https://www.kuwaithr.org/assets/logoOnIndex.svg" alt="شعار الجمعية الكويتية لحقوق الإنسان" class="h-16 mx-auto mb-4">
+            <p class="text-gray-600 mb-6">نظام كرامة لإدارة شؤون الجمعية</p>
+            <form id="login-form" class="space-y-4">
+                <div><select id="username-select" class="w-full p-3 border-2 border-gray-300 rounded-lg text-center focus:outline-none focus:ring-2 focus:ring-sky-500"><option value="" disabled selected>-- اختر اسم المستخدم --</option></select></div>
+                <div><input type="password" id="password-input" class="w-full p-3 border-2 border-gray-300 rounded-lg text-center focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="كلمة المرور"></div>
+                <p id="login-error" class="text-red-500 text-sm pt-1 hidden">بيانات الدخول غير صحيحة.</p>
+                <button type="submit" class="w-full bg-sky-500 text-white font-bold py-3 mt-4 rounded-lg hover:bg-sky-600 transition-colors">تسجيل الدخول</button>
+            </form>
+             <p class="text-xs text-gray-400 mt-6">© 2025 الجمعية الكويتية لحقوق الإنسان.</p>
+        </div>
+    </div>
+
+    <div id="app-container" class="hidden"><div class="flex h-screen">
+        <aside class="sidebar w-64 min-h-screen p-4 shadow-2xl flex flex-col no-print">
+            <div class="text-center mb-8"><img src="https://www.kuwaithr.org/assets/logoOnIndex.svg" alt="شعار الجمعية الكويتية لحقوق الإنسان" class="h-12 mx-auto mb-4"><p id="sidebar-subtitle" class="text-sm text-gray-500">نظام كرامة الإداري</p></div>
+            <nav class="flex-grow" id="nav-links-container"></nav>
+            <div class="mt-auto"><div class="mt-4 border-t border-gray-200 pt-4" data-permission="admin"><button id="backup-btn" class="w-full text-sm font-bold bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 mb-2">تنزيل نسخة احتياطية</button><input type="file" id="restore-input" class="hidden" accept=".json" onchange="restoreData(event)"><button id="restore-btn" class="w-full text-sm font-bold bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700">استعادة نسخة احتياطية</button></div></div>
+        </aside>
+        <main class="flex-1 p-6 md:p-10 overflow-y-auto">
+            <header class="bg-white shadow-sm rounded-lg p-4 mb-6 flex justify-between items-center no-print">
+                <div><h2 id="page-title" class="text-3xl font-bold text-gray-800"></h2></div>
+                 <div class="flex items-center gap-4">
+                    <div class="text-left"><p class="text-sm text-gray-700">مرحباً, <strong id="current-user-name" class="text-sky-600"></strong></p><p id="live-clock" class="text-xs text-gray-500 mt-1"></p></div>
+                    <div class="notification-bell relative">
+                        <button id="notification-bell-btn" class="p-2 rounded-full hover:bg-gray-100">
+                            <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                            <span id="notification-badge" class="notification-badge hidden">0</span>
+                        </button>
+                        <div id="notification-dropdown" class="notification-dropdown"></div>
+                    </div>
+                    <button id="my-profile-btn" class="bg-gray-100 text-gray-700 hover:bg-gray-200 font-bold py-2 px-4 rounded-lg shadow-sm">ملفي الشخصي</button>
+                    <button onclick="logout()" class="bg-red-100 text-red-700 hover:bg-red-200 font-bold py-2 px-4 rounded-lg shadow-sm">خروج</button>
+                </div>
+            </header>
+            <div id="page-content"></div>
+        </main>
+    </div></div>
+    
+    <div id="modal-container"></div>
+    <div id="toast-container"></div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+    const DB_NAME = 'karamah_system_DB_v2_9'; // Version updated
+    const FILES_DB_NAME = 'karamah_Files_DB'; 
+    const FILES_STORE_NAME = 'documents';
+    let db = {}; 
+    let filesDB = null; 
+    let currentUser = null;
+
+    const T = {
+        appName: "نظام كرامة", appSubtitle: "الجمعية الكويتية لحقوق الإنسان", welcome: "مرحباً", save: "حفظ", cancel: "إلغاء", actions: "إجراءات", edit: "تعديل", delete: "حذف", details: "تفاصيل", close: "إغلاق", searchPlaceholder: "ابحث بالاسم أو الرقم...", print: "طباعة", exportCSV: "تصدير Excel", download: "تنزيل", view: "عرض", mainMenu: "القائمة الرئيسية", management: "الإدارة والتنظيم", advanced: "قوائم متقدمة",
+        dashboard: "لوحة التحكم", reports: "التقارير", cases: "ملفات الحالات", members: "شؤون الأعضاء", employees: "شؤون الموظفين", tasks: "إدارة المهام", financials: "الشؤون المالية", expenses: "المصاريف العامة", documentArchive: "أرشيف المستندات", assets: "الأصول والمخزون", meetings: "محاضر الاجتماعات", greetings: "التهاني والمناسبات", settings: "الإعدادات", activityLog: "سجل النشاط",
+        
+        addDocument: "+ أرشفة مستند جديد", addMemberDoc: "+ أرشفة مستند للعضو", addEmployeeDoc: "+ أرشفة مستند للموظف", documentTitle: "عنوان/وصف المستند", associationType: "نوع الارتباط", associationTarget: "الهدف المرتبط", selectTarget: "اختر الهدف...", associationTypes: { all: 'كل الأنواع', general: "عام (غير مرتبط)", case: "ملف حالة", member: "عضو", employee: "موظف", asset: "أصل", meeting: "محضر اجتماع" }, attachedDocuments: "المستندات المرفقة", noAttachedDocs: "لا توجد مستندات مرفقة.", fileName: "اسم الملف", fileSize: "حجم الملف", uploadDate: "تاريخ الرفع", noDocuments: "لا توجد مستندات مؤرشفة.", loading: "جارٍ التحميل...",
+        
+        recentActivity: "أحدث الأنشطة", totalMembers: "إجمالي الأعضاء", totalEmployees: "إجمالي الموظفين", openCases: "حالات مفتوحة", completedCases: "حالات مكتملة", treasuryBalance: "رصيد الخزنة",
+        reportsTitle: "التقارير الشاملة", printReport: "طباعة التقرير", printDocReport: "طباعة تقرير المستند", casesByType: "تصنيف الحالات حسب النوع", casesByStatus: "تصنيف الحالات حسب الحالة", financialSummary: "ملخص مالي", reportPeriod: "الفترة الزمنية للتقرير", monthly: "شهري", quarterly: "ربع سنوي", annually: "سنوي", selectPeriod: "اختر الفترة",
+        systemAlerts: "تنبيهات النظام", noAlerts: "لا توجد تنبيهات حالية.", daysLeft: "أيام متبقية", expired: "منتهي", alertMessage: "لديك تنبيه جديد",
+        
+        addCase: "+ فتح ملف حالة", caseFile: "ملف الحالة", caseId: "رقم الملف", beneficiaryName: "اسم المستفيد", beneficiaryPhone: "هاتف المستفيد", caseType: "نوع الحالة", caseStatus: "حالة الملف", creationDate: "تاريخ الإنشاء", caseDetails: "تفاصيل الحالة", addCaseUpdate: "إضافة تحديث جديد", updateDetails: "تفاصيل الإجراء/التحديث", caseUpdatesLog: "سجل إجراءات الحالة", caseTypes: { all: 'كل الأنواع', labor_complaint: 'شكوى عمالية', legal_aid: 'استشارة قانونية', humanitarian_aid: 'طلب مساعدة إنسانية', other: 'أخرى' }, caseStatuses: { all: 'كل الحالات', new: 'جديد', in_progress: 'قيد المتابعة', completed: 'مكتمل', archived: 'مؤرشف' },
+        summarizeCase: "✨ تلخيص الحالة", generatingSummary: "جارٍ إنشاء الملخص...", caseSummary: "ملخص الحالة (AI)",
+        
+        addMember: "+ إضافة عضو", memberDetails: "تفاصيل العضو", memberName: "اسم العضو", civilId: "الرقم المدني", civilIdError: "الرقم المدني يجب أن يتكون من 12 رقماً.", phone: "الهاتف", email: "البريد الإلكتروني", membershipType: "نوع العضوية", membershipStatus: "حالة العضوية", joinDate: "تاريخ الانضمام", membershipExpiry: "انتهاء العضوية", memberTypes: { all: 'كل الأنواع', active: 'عضو عامل', associate: 'عضو منتسب', honorary: 'عضو فخري' }, memberStatuses: { all: 'كل الحالات', active: 'نشط', frozen: 'مجمد', expired: 'منتهي' },
+        printOptions: "خيارات الطباعة", printFullName: "طباعة كشف بالاسم كامل", printFirstSecond: "طباعة الاسم الأول والثاني", printFirstSecondLast: "طباعة الاسم الأول والثاني والأخير",
+        
+        addEmployee: "+ إضافة موظف", employeeDetails: "تفاصيل الموظف", employeeName: "اسم الموظف", jobTitle: "المسمى الوظيفي", employeeStatus: "حالة الموظف", hireDate: "تاريخ التعيين", residencyExpiry: "انتهاء الإقامة", department: "القسم", departments: { all: 'كل الأقسام', admin: 'الإدارة', legal: 'القسم القانوني', outreach: 'التوعية والمتابعة', financial: 'الشؤون المالية' }, employeeStatuses: { all: 'كل الحالات', active: 'على رأس عمله', on_leave: 'إجازة', terminated: 'منتهية خدماته' },
+        
+        addTask: "+ إضافة مهمة جديدة", taskTitle: "عنوان المهمة", assignedTo: "مسندة إلى", dueDate: "تاريخ الاستحقاق", priority: "الأولوية", taskStatus: "حالة المهمة", linkTo: "ربط بـ", noLink: "غير مربوطة", priorities: { low: 'منخفضة', medium: 'متوسطة', high: 'عالية' }, taskStatuses: { all: 'كل الحالات', new: 'جديدة', in_progress: 'قيد التنفيذ', completed: 'مكتملة' }, noTasks: "لا توجد مهام حالياً.",
+        
+        addDonation: "+ إضافة تبرع/اشتراك", source: "المصدر/اسم المتبرع", amount: "المبلغ", paymentDate: "تاريخ الدفع", paymentType: "نوع الدفعة", paymentTypes: { all: 'كل الأنواع', subscription: 'اشتراك عضوية', donation: 'تبرع', other: 'إيرادات أخرى' }, inflows: "الإيرادات", outflows: "المصروفات",
+        addExpense: "+ إضافة مصروف", expenseCategory: "فئة المصروف", expenseDescription: "وصف المصروف", expenseCategories: { all: 'كل الفئات', salaries: 'رواتب', rent: 'إيجار', utilities: 'فواتير ومنافع', case_related: 'مصاريف قضايا', office_supplies: 'مستلزمات مكتبية', other: 'مصاريف أخرى' },
+        dateFrom: "من تاريخ", dateTo: "إلى تاريخ",
+        
+        addAsset: "+ إضافة أصل جديد", assetName: "اسم الأصل", assetCategory: "فئة الأصل", purchaseDate: "تاريخ الشراء", assetStatus: "حالة الأصل", assetCategories: { all: 'كل الفئات', electronics: 'أجهزة إلكترونية', furniture: 'أثاث مكتبي', vehicle: 'مركبات', other: 'أخرى' }, assetStatuses: { all: 'كل الحالات', in_use: 'قيد الاستخدام', in_storage: 'في المخزن', under_maintenance: 'تحت الصيانة', retired: 'خارج الخدمة' }, noAssets: "لا توجد أصول مسجلة.",
+        
+        addMeeting: "+ إضافة محضر اجتماع", meetingTitle: "عنوان الاجتماع", meetingDate: "تاريخ الاجتماع", attendees: "أسماء الحضور", agenda: "جدول الأعمال", decisions: "القرارات والتوصيات", meetingStatus: "حالة الاجتماع", meetingStatuses: { all: 'كل الحالات', scheduled: 'مجدول', completed: 'منعقد', canceled: 'ملغي' }, noMeetings: "لا توجد محاضر اجتماعات مسجلة.", viewMeeting: "عرض تفاصيل المحضر",
+        summarizeMeeting: "✨ توليد ملخص الاجتماع", meetingSummary: "ملخص وقرارات الاجتماع (AI)",
+        
+        userManagement: "إدارة المستخدمين", addUser: "+ إضافة مستخدم", username: "اسم المستخدم", password: "كلمة المرور", permissions: "الصلاحيات", permissionInfo: "الصلاحيات: all, dashboard, reports, cases, members, employees, tasks, financials, expenses, documentArchive, assets, meetings, greetings, settings, gemini_features.", myProfile: "ملفي الشخصي", changePassword: "تغيير كلمة المرور", currentPassword: "كلمة المرور الحالية", newPassword: "كلمة المرور الجديدة", confirmNewPassword: "تأكيد كلمة المرور الجديدة", passwordMismatch: "كلمات المرور الجديدة غير متطابقة.", passwordIncorrect: "كلمة المرور الحالية غير صحيحة.", passwordChangedSuccess: "تم تغيير كلمة المرور بنجاح.",
+        greetingsPageTitle: "إرسال التهاني والمناسبات للأعضاء", selectOccasion: "اختر المناسبة", messageContent: "نص الرسالة", generateLinks: "تجهيز روابط الإرسال", greetingLinks: "روابط التهنئة الجاهزة", clickToSend: "اضغط على كل رابط لإرسال التهنئة عبر واتساب",
+        saveSuccess: "تم الحفظ بنجاح!", deleteConfirm: "هل أنت متأكد من حذف هذا العنصر؟", deleteCascadeConfirm: "سيتم أيضاً حذف جميع المستندات المرتبطة بهذا العنصر من الأرشيف. هل أنت متأكد؟", backupSuccess: "تم تنزيل النسخة الاحتياطية بنجاح.", restoreSuccess: "تم استعادة البيانات بنجاح! سيتم تحديث الصفحة.", restoreWarning: "تحذير! سيتم استبدال كل البيانات الحالية (باستثناء أرشيف الملفات) بالبيانات الموجودة في الملف. هل أنت متأكد؟", fileError: "ملف النسخة الاحتياطية غير صالح.", uploadSuccess: "تم رفع الملف وأرشفته بنجاح!", fileSelectError: "يرجى اختيار ملف لرفعه."
+    };
+    
+    const loadLocalStorageDB = () => {
+        let data = localStorage.getItem(DB_NAME);
+        if (data) {
+            db = JSON.parse(data);
+        } else {
+            db = {
+                cases: [], members: [], employees: [], financials: [], expenses: [], assets: [], meetings: [], tasks: [],
+                users: [
+                    { id: 1, username: 'admin', password: '123', name: 'رئيس مجلس الإدارة', permissions: ['all'] },
+                    { id: 2, username: 'manager', password: '456', name: 'مدير الجمعية', permissions: ['dashboard', 'reports', 'cases', 'members', 'employees', 'tasks', 'financials', 'expenses', 'documentArchive', 'assets', 'meetings', 'greetings', 'activityLog', 'settings', 'gemini_features'] },
+                    { id: 3, username: 'legal', password: '789', name: 'باحث قانوني', permissions: ['dashboard', 'cases', 'tasks', 'documentArchive'] },
+                    { id: 4, username: 'finance', password: '111', name: 'محاسب', permissions: ['dashboard', 'reports', 'financials', 'expenses'] },
+                    { id: 5, username: 'viewer', password: '000', name: 'مراقب (مجلس إدارة)', permissions: ['dashboard', 'reports'] },
+                ],
+                activityLog: [],
+                counters: { user: 5, member: 0, employee: 0, asset: 0, meeting: 0, task: 0, document: 1000 }
+            };
+            saveDB();
+        }
+    };
+    
+    const initFilesDB = () => new Promise((resolve, reject) => { const request = indexedDB.open(FILES_DB_NAME, 1); request.onupgradeneeded = (e) => { const dbInstance = e.target.result; if (!dbInstance.objectStoreNames.contains(FILES_STORE_NAME)) { const store = dbInstance.createObjectStore(FILES_STORE_NAME, { keyPath: 'id' }); store.createIndex('association', 'association', { unique: false }); } }; request.onsuccess = (e) => { filesDB = e.target.result; resolve(); }; request.onerror = (e) => reject(e.target.error); });
+    const saveDB = () => { try { localStorage.setItem(DB_NAME, JSON.stringify(db)); } catch (e) { showToast("حدث خطأ أثناء حفظ البيانات", 'error'); } };
+    const logActivity = (description) => { if (!currentUser) return; db.activityLog.unshift({ timestamp: new Date().toISOString(), user: currentUser.name, description }); if (db.activityLog.length > 200) db.activityLog.pop(); };
+    const showToast = (message, type = 'success') => { const c = document.getElementById('toast-container'); const t = document.createElement('div'); const b = type === 'success' ? 'bg-emerald-500' : type === 'error' ? 'bg-red-500' : 'bg-warning'; t.className = `toast ${b}`; t.textContent = message; c.appendChild(t); setTimeout(() => t.classList.add('show'), 10); setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 500); }, 4000); };
+    const formatDate = (d) => d ? new Date(d).toLocaleDateString('ar-KW') : '-';
+    const formatDateTime = (d) => d ? new Date(d).toLocaleString('ar-KW') : '-';
+    const formatBytes = (b, d = 2) => { if (!b || b === 0) return '0 Bytes'; const k = 1024; const s = ['Bytes', 'KB', 'MB', 'GB', 'TB']; const i = Math.floor(Math.log(b) / Math.log(k)); return parseFloat((b / Math.pow(k, i)).toFixed(d < 0 ? 0 : d)) + ' ' + s[i]; }
+    const getStatusClass = (s) => ({ 'new':'bg-blue-100 text-blue-800', 'in_progress':'bg-amber-100 text-amber-800', 'completed':'bg-emerald-100 text-emerald-800', 'archived':'bg-gray-100 text-gray-800', 'active':'bg-green-100 text-green-800', 'frozen':'bg-yellow-100 text-yellow-800', 'on_leave':'bg-yellow-100 text-yellow-800', 'expired':'bg-red-100 text-red-800', 'terminated':'bg-red-100 text-red-800', 'in_use': 'bg-sky-100 text-sky-800', 'in_storage': 'bg-gray-100 text-gray-800', 'under_maintenance': 'bg-yellow-100 text-yellow-800', 'retired': 'bg-red-100 text-red-800', 'scheduled': 'bg-blue-100 text-blue-800', 'canceled': 'bg-red-100 text-red-800', 'high': 'bg-red-100 text-red-800', 'medium': 'bg-yellow-100 text-yellow-800', 'low': 'bg-green-100 text-green-800' }[s] || 'bg-gray-100 text-gray-800');
+    const openModal = (title, content, size = 'max-w-2xl', onclose) => { const c = document.getElementById('modal-container'); c.innerHTML = `<div class="modal-overlay" style="display:flex;"><div class="modal-content ${size}"><div class="flex justify-between items-center mb-4 border-b pb-2"><h2 class="text-2xl font-bold text-gray-800">${title}</h2><button id="close-modal-btn" class="text-gray-500 hover:text-red-600 text-3xl">&times;</button></div>${content}</div></div>`; c.querySelector('.modal-overlay').addEventListener('click', (e) => { if (e.target === e.currentTarget || e.target.closest('#close-modal-btn') || e.target.closest('#cancel-btn')) { if (onclose) onclose(); c.innerHTML = ''; } }); };
+    const createForm = (id, fields, buttons) => `<form id="${id}">${fields}</form><div class="flex justify-end gap-4 mt-6">${buttons}</div>`;
+    const createField = (label, name, type = 'text', req = true, val = '', opts = {}) => `<div class="mb-4"><label class="block text-sm font-bold text-gray-700 mb-2">${label}</label><input name="${name}" type="${type}" class="w-full p-3 border rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sky-500" ${req?'required':''} value="${val}" placeholder="${opts.placeholder||''}" ${opts.step?`step="${opts.step}"`:''}></div>`;
+    const createTextarea = (label, name, req = true, val = '') => `<div class="mb-4"><label class="block text-sm font-bold text-gray-700 mb-2">${label}</label><textarea name="${name}" class="w-full p-3 border rounded-lg bg-gray-50" rows="4" ${req?'required':''}>${val}</textarea></div>`;
+    const createSelect = (label, name, map, sel = '', req = true, attrs = '') => `<div class="mb-4"><label class="block mb-2 text-sm font-semibold text-gray-600">${label}</label><select name="${name}" class="w-full p-3 border rounded-lg bg-white" ${req?'required':''} ${attrs}>${Object.entries(map).map(([k,v])=>`<option value="${k}" ${k===sel?'selected':''}>${v}</option>`).join('')}</select></div>`;
+    
+    const renderPage = async (pageKey) => { 
+        const c = document.getElementById('page-content'); 
+        document.getElementById('page-title').textContent = T[pageKey] || ''; 
+        c.innerHTML = ''; 
+        const w = document.createElement('div'); 
+        w.className = 'page active'; 
+        w.id = `page-${pageKey}`; 
+        const fns = { dashboard: renderDashboard, reports: renderReports, cases: renderCases, members: renderMembers, employees: renderEmployees, tasks: renderTasks, financials: renderFinancials, expenses: renderExpenses, documentArchive: renderDocumentArchive, assets: renderAssets, meetings: renderMeetings, greetings: renderGreetings, settings: renderSettings, activityLog: renderActivityLog }; 
+        if (fns[pageKey]) {
+            await fns[pageKey](w); 
+        }
+        c.appendChild(w); 
+    };
+
+    const getAlerts = () => { const a=[]; const n=new Date(); const d30=new Date(); d30.setDate(n.getDate()+30); (db.employees||[]).forEach(e=>{if(e.residencyExpiry){const ed=new Date(e.residencyExpiry); if(ed<=d30)a.push({type: 'residency', item: e, daysLeft:Math.ceil((ed-n)/864e5)})}}); (db.members||[]).forEach(m=>{if(m.membershipExpiry){const ed=new Date(m.membershipExpiry); if(ed<=d30)a.push({type: 'membership', item: m, daysLeft:Math.ceil((ed-n)/864e5)})}}); return a.sort((x,y)=>x.daysLeft-y.daysLeft); };
+    const getNotifications = () => {
+        const alerts = getAlerts();
+        const myTasks = (db.tasks || []).filter(t => t.assignedTo == currentUser.id && t.status !== 'completed');
+        return { alerts, myTasks };
+    };
+    const showStartupNotifications = () => { const { alerts } = getNotifications(); alerts.forEach(alert => { const message = `${T[alert.type==='residency'?'residencyExpiry':'membershipExpiry']}: ${alert.item.name} - ${alert.daysLeft > 0 ? `باقي ${alert.daysLeft} يوم` : 'منتهي الصلاحية'}`; showToast(message, 'warning'); }); };
+    const renderDashboard = (c) => { const oC = db.cases.filter(c=>c.status==='in_progress'||c.status==='new').length; const cc = db.cases.filter(c=>c.status==='completed').length; const tM = db.members.length; const tE = db.employees.length; const tI = db.financials.reduce((s,i)=>s+Number(i.amount),0); const tO = db.expenses.reduce((s,i)=>s+Number(i.amount),0); const tB=tI-tO; const a=getAlerts(); let ah=`<div class="text-center p-4 bg-gray-50 rounded-lg"><svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg><p class="mt-2 text-sm font-medium text-gray-500">${T.noAlerts}</p></div>`; if(a.length>0){ah=a.map(al=>{const ie=al.daysLeft<=0; const cl=ie?'border-red-500 bg-red-50 text-red-800':'border-amber-500 bg-amber-50 text-amber-800'; const expiryType = T[al.type==='residency'?'residencyExpiry':'membershipExpiry']; const whatsappBtn = al.type === 'membership' ? `<button class="btn-whatsapp notify-member-expiry" data-member-id="${al.item.id}"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.894 11.892-1.99 0-3.903-.52-5.586-1.457l-6.354 1.654zm.789-6.816l6.062-1.595a.95.95 0 01.859.297c1.76 1.439 3.846 2.24 6.002 2.24 5.454.001 9.903-4.448 9.902-9.902-.002-5.454-4.449-9.902-9.902-9.902-5.454 0-9.902 4.448-9.902 9.902 0 2.028.59 3.94 1.634 5.578a.948.948 0 01.12.89l-1.61 5.861z"/></svg></button>` : ''; return `<div class="p-3 ${cl} border-r-4 rounded-lg flex justify-between items-center transition hover:shadow-md"><div><p class="font-bold">${expiryType}: ${al.item.name}</p></div><div class="flex items-center gap-2"><span class="font-bold text-sm px-2 py-1 rounded-full ${ie?'bg-red-200':'bg-amber-200'}">${ie?T.expired:`${al.daysLeft} ${T.daysLeft}`}</span>${whatsappBtn}</div></div>`}).join('')} const rA=db.activityLog.slice(0,5).map(l=>`<div class="border-b py-2 text-sm"><p>${l.description}</p><p class="text-xs text-gray-500">${l.user} - ${formatDateTime(l.timestamp)}</p></div>`).join('')||`<p class="text-center text-gray-500">لا يوجد نشاط مسجل.</p>`; c.innerHTML=`<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-8"><div class="stat-card border-l-amber-500 bg-white p-4 rounded-xl shadow-lg text-center"><p class="text-gray-500">${T.openCases}</p><p class="text-3xl font-bold text-amber-600">${oC}</p></div><div class="stat-card border-l-emerald-500 bg-white p-4 rounded-xl shadow-lg text-center"><p class="text-gray-500">${T.completedCases}</p><p class="text-3xl font-bold text-emerald-600">${cc}</p></div><div class="stat-card border-l-sky-500 bg-white p-4 rounded-xl shadow-lg text-center"><p class="text-gray-500">${T.totalMembers}</p><p class="text-3xl font-bold text-sky-600">${tM}</p></div><div class="stat-card border-l-indigo-500 bg-white p-4 rounded-xl shadow-lg text-center"><p class="text-gray-500">${T.totalEmployees}</p><p class="text-3xl font-bold text-indigo-600">${tE}</p></div><div class="stat-card border-l-teal-500 bg-white p-4 rounded-xl shadow-lg text-center"><p class="text-gray-500">${T.treasuryBalance}</p><p class="text-3xl font-bold text-teal-600">${tB.toFixed(3)}</p></div></div><div class="grid grid-cols-1 lg:grid-cols-3 gap-6"><div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-lg"><h3 class="font-bold text-xl mb-4">${T.systemAlerts}</h3><div class="space-y-3 max-h-96 overflow-y-auto">${ah}</div></div><div class="bg-white p-6 rounded-xl shadow-lg"><h3 class="font-bold text-xl mb-4">${T.recentActivity}</h3><div class="space-y-2 max-h-96 overflow-y-auto">${rA}</div></div></div>`; };
+    const createFilterControls = (filters) => { return `<div class="grid grid-cols-2 md:grid-cols-4 gap-2">${filters.map(f => `<select class="table-filter p-2 border rounded-lg bg-white" data-filter-column="${f.column}">${Object.entries(f.options).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select>`).join('')}</div>`; }
+    const applyTableFilters = (table) => { const page = table.closest('.page'); const filters = Array.from(page.querySelectorAll('.table-filter')); const searchInput = page.querySelector('.table-search'); if(!searchInput) return; const search = searchInput.value.toLowerCase(); const activeFilters = filters.map(f => ({ column: f.dataset.filterColumn, value: f.value })).filter(f => f.value !== 'all'); table.querySelectorAll('tbody tr').forEach(r => { const textMatch = r.textContent.toLowerCase().includes(search); const filterMatch = activeFilters.every(f => r.dataset[f.column] === f.value); r.style.display = textMatch && filterMatch ? "" : "none"; }); };
+    const renderCases = (c) => { const filters = [{column:'casetype', options: T.caseTypes}, {column:'status', options: T.caseStatuses}]; c.innerHTML = `<div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-6 no-print"><button id="add-case-btn" class="btn-primary w-full md:w-auto" data-permission="cases">${T.addCase}</button><div class="flex-grow w-full"><div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">${createFilterControls(filters)}</div><input class="table-search w-full p-2 border rounded-lg" type="text" placeholder="${T.searchPlaceholder}"></div><div class="flex gap-2 w-full md:w-auto justify-center"><button class="export-table-btn btn-action" data-table="cases-table" data-filename="Cases_Report">${T.exportCSV}</button><button class="print-page-btn btn-print">${T.print}</button></div></div><div class="bg-white rounded-xl shadow-md overflow-hidden print-area"><div class="overflow-x-auto"><table id="cases-table" class="min-w-full text-center responsive-table"><thead class="bg-gray-100 text-gray-600 font-bold"><tr><th class="p-3">${T.caseId}</th><th class="p-3">${T.beneficiaryName}</th><th class="p-3">${T.beneficiaryPhone}</th><th class="p-3">${T.caseType}</th><th class="p-3">${T.caseStatus}</th><th class="p-3 no-print">${T.actions}</th></tr></thead><tbody class="divide-y divide-gray-200">${db.cases.sort((a,b) => b.caseId - a.caseId).map(i => `<tr data-casetype="${i.caseType}" data-status="${i.status}"><td data-label="${T.caseId}" class="p-3 font-mono">${i.caseId}</td><td data-label="${T.beneficiaryName}" class="p-3 font-semibold">${i.beneficiaryName}</td><td data-label="${T.beneficiaryPhone}" class="p-3">${i.beneficiaryPhone || '-'}</td><td data-label="${T.caseType}" class="p-3">${T.caseTypes[i.caseType] || i.caseType}</td><td data-label="${T.caseStatus}" class="p-3"><span class="px-2 py-1 text-xs font-bold rounded-full ${getStatusClass(i.status)}">${T.caseStatuses[i.status] || i.status}</span></td><td data-label="${T.actions}" class="p-3 no-print"><div class="flex justify-center items-center gap-3"><button class="text-sky-600 hover:text-sky-800 view-case-btn" data-id="${i.caseId}">${T.details}</button><button class="text-amber-600 hover:text-amber-800 edit-case-btn" data-id="${i.caseId}" data-permission="cases">${T.edit}</button><button class="text-red-600 hover:text-red-800 delete-btn" data-type="cases" data-id="${i.caseId}" data-permission="cases">${T.delete}</button>${i.beneficiaryPhone ? `<button class="btn-whatsapp" data-phone="${i.beneficiaryPhone}"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.894 11.892-1.99 0-3.903-.52-5.586-1.457l-6.354 1.654zm.789-6.816l6.062-1.595a.95.95 0 01.859.297c1.76 1.439 3.846 2.24 6.002 2.24 5.454.001 9.903-4.448 9.902-9.902-.002-5.454-4.449-9.902-9.902-9.902-5.454 0-9.902 4.448-9.902 9.902 0 2.028.59 3.94 1.634 5.578a.948.948 0 01.12.89l-1.61 5.861z"/></svg></button>` : ''}</div></td></tr>`).join('') || `<tr><td colspan="6" class="p-6 text-center text-gray-500">لا توجد حالات مسجلة.</td></tr>`}</tbody></table></div></div>`; };
+    const renderMembers = (c) => { const filters = [{column:'type', options: T.memberTypes}, {column:'status', options: T.memberStatuses}]; let printButtonHtml = `<button class="print-page-btn btn-print">${T.print}</button>`; if (currentUser.username === 'admin') { printButtonHtml = `<div class="dropdown"><button class="btn-print">${T.printOptions}</button><div class="dropdown-content"><a href="#" class="print-members-list-btn" data-format="full">${T.printFullName}</a><a href="#" class="print-members-list-btn" data-format="first_second">${T.printFirstSecond}</a><a href="#" class="print-members-list-btn" data-format="first_second_last">${T.printFirstSecondLast}</a></div></div>`; } c.innerHTML = `<div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-6 no-print"><button id="add-member-btn" class="btn-primary w-full md:w-auto" data-permission="members">${T.addMember}</button><div class="flex-grow w-full"><div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">${createFilterControls(filters)}</div><input class="table-search w-full p-2 border rounded-lg" type="text" placeholder="${T.searchPlaceholder}"></div><div class="flex gap-2 w-full md:w-auto justify-center"><button class="export-table-btn btn-action" data-table="members-table" data-filename="Members_Report">${T.exportCSV}</button>${printButtonHtml}</div></div><div class="bg-white rounded-xl shadow-md overflow-hidden print-area"><div class="overflow-x-auto"><table id="members-table" class="min-w-full text-center responsive-table"><thead class="bg-gray-100 text-gray-600 font-bold"><tr><th class="p-3 no-print"></th><th class="p-3">${T.memberName}</th><th class="p-3">${T.civilId}</th><th class="p-3">${T.phone}</th><th class="p-3">${T.membershipType}</th><th class="p-3">${T.membershipStatus}</th><th class="p-3 no-print">${T.actions}</th></tr></thead><tbody class="divide-y divide-gray-200">${db.members.map(m=>`<tr data-type="${m.type}" data-status="${m.status}"><td class="p-2 no-print"><svg class="w-10 h-10 text-gray-400 mx-auto" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"></path></svg></td><td data-label="${T.memberName}" class="p-3 font-semibold">${m.name}</td><td data-label="${T.civilId}" class="p-3">${m.civilId}</td><td data-label="${T.phone}" class="p-3">${m.phone}</td><td data-label="${T.membershipType}" class="p-3">${T.memberTypes[m.type]||m.type}</td><td data-label="${T.membershipStatus}" class="p-3"><span class="px-2 py-1 text-xs font-bold rounded-full ${getStatusClass(m.status)}">${T.memberStatuses[m.status]||m.status}</span></td><td data-label="${T.actions}" class="p-3 no-print"><div class="flex justify-center items-center gap-2"><button class="text-sky-500 hover:text-sky-700 view-member-btn" data-id="${m.id}">${T.details}</button><button class="text-amber-600 hover:text-amber-800 edit-member-btn" data-id="${m.id}" data-permission="members">${T.edit}</button><button class="text-red-600 hover:text-red-800 delete-btn" data-type="members" data-id="${m.id}" data-permission="members">${T.delete}</button></div></td></tr>`).join('')||`<tr><td colspan="7" class="p-6 text-center text-gray-500">لا يوجد أعضاء.</td></tr>`}</tbody></table></div></div>`; };
+    const renderMemberDetails = async (memberId) => {
+        const member = db.members.find(m => m.id == memberId); if (!member) return;
+        let content = `<div class="grid grid-cols-1 md:grid-cols-3 gap-6"><div class="md:col-span-1 flex flex-col items-center"><svg class="w-40 h-40 text-gray-300" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"></path></svg><h3 class="text-2xl font-bold mt-4">${member.name}</h3><p class="text-gray-500">${T.memberTypes[member.type]}</p></div><div class="md:col-span-2 space-y-4 bg-gray-50 p-4 rounded-lg"><div><strong class="text-gray-600">${T.civilId}:</strong><p>${member.civilId || '-'}</p></div><div><strong class="text-gray-600">${T.phone}:</strong><p>${member.phone || '-'}</p></div><div><strong class="text-gray-600">${T.email}:</strong><p>${member.email || '-'}</p></div><div><strong class="text-gray-600">${T.membershipStatus}:</strong><p><span class="px-2 py-1 rounded-full ${getStatusClass(member.status)}">${T.memberStatuses[member.status]}</span></p></div><div><strong class="text-gray-600">${T.joinDate}:</strong><p>${formatDate(member.joinDate)}</p></div><div><strong class="text-gray-600">${T.membershipExpiry}:</strong><p>${formatDate(member.membershipExpiry)}</p></div></div></div><hr class="my-6"><div id="attached-docs-container"></div>`;
+        openModal(`${T.memberDetails}`, content, 'max-w-4xl');
+        const docsContainer = document.getElementById('attached-docs-container');
+        const allDocs = await getAllFiles(); const attachedDocs = allDocs.filter(doc => doc.association && doc.association.type === 'member' && doc.association.id == memberId);
+        let docsHtml = `<div class="flex justify-between items-center mb-4"><h4 class="text-xl font-bold">${T.attachedDocuments}</h4><button id="add-member-doc-btn" data-member-id="${member.id}" class="btn-action" data-permission="members">${T.addMemberDoc}</button></div>`;
+        if (attachedDocs.length > 0) { docsHtml += `<div class="bg-gray-50 p-4 rounded-lg space-y-3">` + attachedDocs.map(doc => `<div class="flex justify-between items-center p-2 border-b"><p class="font-semibold">${doc.description || doc.fileName}</p><div class="flex items-center gap-3">${isFileTypePreviewable(doc.file)?`<button class="text-sky-600 hover:text-sky-800 text-sm font-bold view-doc-btn" data-id="${doc.id}">${T.view}</button>`:''}<button class="text-emerald-600 hover:text-emerald-800 text-sm font-bold download-doc-btn" data-id="${doc.id}">${T.download}</button><button class="text-red-600 hover:text-red-800 text-sm font-bold delete-btn" data-type="documents" data-id="${doc.id}" data-permission="documentArchive">${T.delete}</button></div></div>`).join('') + `</div>`; } else { docsHtml += `<p class="text-gray-500">${T.noAttachedDocs}</p>`; }
+        docsContainer.innerHTML = docsHtml;
+    };
+    const renderEmployees = async (c) => { const filters = [{column:'department', options: T.departments}, {column:'status', options: T.employeeStatuses}]; c.innerHTML = `<div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-6 no-print"><button id="add-employee-btn" class="btn-primary w-full md:w-auto" data-permission="employees">${T.addEmployee}</button><div class="flex-grow w-full"><div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">${createFilterControls(filters)}</div><input class="table-search w-full p-2 border rounded-lg" type="text" placeholder="${T.searchPlaceholder}"></div><div class="flex gap-2 w-full md:w-auto justify-center"><button class="export-table-btn btn-action" data-table="employees-table" data-filename="Employees_Report">${T.exportCSV}</button><button class="print-page-btn btn-print">${T.print}</button></div></div><div class="bg-white rounded-xl shadow-md overflow-hidden print-area"><div class="overflow-x-auto"><table id="employees-table" class="min-w-full text-center responsive-table"><thead class="bg-gray-100 text-gray-600 font-bold"><tr><th class="p-3">${T.employeeName}</th><th class="p-3">${T.civilId}</th><th class="p-3">${T.jobTitle}</th><th class="p-3">${T.department}</th><th class="p-3">${T.employeeStatus}</th><th class="p-3 no-print">${T.actions}</th></tr></thead><tbody class="divide-y divide-gray-200">${db.employees.map(e=>`<tr data-department="${e.department||''}" data-status="${e.status}"><td data-label="${T.employeeName}" class="p-3 font-semibold">${e.name}</td><td data-label="${T.civilId}" class="p-3">${e.civilId || '-'}</td><td data-label="${T.jobTitle}" class="p-3">${e.jobTitle}</td><td data-label="${T.department}" class="p-3">${T.departments[e.department]||e.department||'-'}</td><td data-label="${T.employeeStatus}" class="p-3"><span class="px-2 py-1 text-xs font-bold rounded-full ${getStatusClass(e.status)}">${T.employeeStatuses[e.status]||e.status}</span></td><td data-label="${T.actions}" class="p-3 no-print"><div class="flex justify-center items-center gap-2"><button class="text-sky-500 hover:text-sky-700 view-employee-btn" data-id="${e.id}">${T.details}</button><button class="text-amber-600 hover:text-amber-800 edit-employee-btn" data-id="${e.id}" data-permission="employees">${T.edit}</button><button class="text-red-600 hover:text-red-800 delete-btn" data-type="employees" data-id="${e.id}" data-permission="employees">${T.delete}</button></div></td></tr>`).join('')||`<tr><td colspan="6" class="p-6 text-center text-gray-500">لا يوجد موظفون.</td></tr>`}</tbody></table></div></div>`; };
+    const renderEmployeeDetails = async (employeeId) => {
+        const employee = db.employees.find(e => e.id == employeeId); if (!employee) return;
+        let content = `<div class="grid grid-cols-1 md:grid-cols-3 gap-6"><div class="md:col-span-1 flex flex-col items-center"><svg class="w-40 h-40 text-gray-300" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"></path></svg><h3 class="text-2xl font-bold mt-4">${employee.name}</h3><p class="text-gray-500">${employee.jobTitle}</p></div><div class="md:col-span-2 space-y-4 bg-gray-50 p-4 rounded-lg"><div><strong class="text-gray-600">${T.civilId}:</strong><p>${employee.civilId || '-'}</p></div><div><strong class="text-gray-600">${T.phone}:</strong><p>${employee.phone || '-'}</p></div><div><strong class="text-gray-600">${T.department}:</strong><p>${T.departments[employee.department] || '-'}</p></div><div><strong class="text-gray-600">${T.hireDate}:</strong><p>${formatDate(employee.hireDate)}</p></div><div><strong class="text-gray-600">${T.residencyExpiry}:</strong><p>${formatDate(employee.residencyExpiry)}</p></div></div></div><hr class="my-6"><div id="attached-docs-container"></div>`;
+        openModal(`${T.employeeDetails}`, content, 'max-w-4xl');
+        const docsContainer = document.getElementById('attached-docs-container');
+        const allDocs = await getAllFiles(); const attachedDocs = allDocs.filter(doc => doc.association && doc.association.type === 'employee' && doc.association.id == employeeId);
+        let docsHtml = `<div class="flex justify-between items-center mb-4"><h4 class="text-xl font-bold">${T.attachedDocuments}</h4><button id="add-employee-doc-btn" data-employee-id="${employee.id}" class="btn-action" data-permission="employees">${T.addEmployeeDoc}</button></div>`;
+        if (attachedDocs.length > 0) { docsHtml += `<div class="bg-gray-50 p-4 rounded-lg space-y-3">` + attachedDocs.map(doc => `<div class="flex justify-between items-center p-2 border-b"><p class="font-semibold">${doc.description || doc.fileName}</p><div class="flex items-center gap-3">${isFileTypePreviewable(doc.file)?`<button class="text-sky-600 hover:text-sky-800 text-sm font-bold view-doc-btn" data-id="${doc.id}">${T.view}</button>`:''}<button class="text-emerald-600 hover:text-emerald-800 text-sm font-bold download-doc-btn" data-id="${doc.id}">${T.download}</button><button class="text-red-600 hover:text-red-800 text-sm font-bold delete-btn" data-type="documents" data-id="${doc.id}" data-permission="documentArchive">${T.delete}</button></div></div>`).join('') + `</div>`; } else { docsHtml += `<p class="text-gray-500">${T.noAttachedDocs}</p>`; }
+        docsContainer.innerHTML = docsHtml;
+    };
+    const openEmployeeModal = async (employee) => {
+        const isEdit = !!employee; 
+        const formContent = `
+            <input type="hidden" name="formType" value="${isEdit ? 'editEmployee' : 'addEmployee'}">
+            ${isEdit ? `<input type="hidden" name="employeeId" value="${employee.id}">` : ''}
+            <div class="grid md:grid-cols-2 gap-4">
+                ${createField(T.employeeName, 'name', 'text', true, isEdit ? employee.name : '')}
+                ${createField(T.civilId, 'civilId', 'text', false, isEdit ? (employee.civilId || '') : '')}
+                ${createField(T.jobTitle, 'jobTitle', 'text', true, isEdit ? employee.jobTitle : '')}
+                ${createField(T.phone, 'phone', 'tel', false, isEdit ? (employee.phone || '') : '')}
+                ${createSelect(T.department, 'department', T.departments, isEdit ? employee.department : 'admin')}
+                ${createSelect(T.employeeStatus, 'status', T.employeeStatuses, isEdit ? employee.status : 'active')}
+                ${createField(T.hireDate, 'hireDate', 'date', false, isEdit ? employee.hireDate : '')}
+                ${createField(T.residencyExpiry, 'residencyExpiry', 'date', false, isEdit ? employee.residencyExpiry : '')}
+            </div>
+        `;
+        const formButtons = `<button type="button" id="cancel-btn" class="btn-secondary">${T.cancel}</button><button type="submit" form="modal-form" class="btn-primary">${T.save}</button>`;
+        openModal(isEdit ? T.edit : T.addEmployee, createForm('modal-form', formContent, formButtons), 'max-w-3xl');
+    };
+    const renderFinancials = (c) => { const filters = [{column:'type', options: T.paymentTypes}]; c.innerHTML = `<div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-6 no-print"><button id="add-donation-btn" class="btn-primary" data-permission="financials">${T.addDonation}</button><div class="flex-grow w-full"><div class="grid grid-cols-1 md:grid-cols-3 gap-2 mb-2">${createFilterControls(filters)}<input type="date" class="table-filter p-2 border rounded-lg bg-white" data-filter-column="date_from" placeholder="${T.dateFrom}"><input type="date" class="table-filter p-2 border rounded-lg bg-white" data-filter-column="date_to" placeholder="${T.dateTo}"></div><input class="table-search w-full p-2 border rounded-lg" type="text" placeholder="${T.searchPlaceholder}"></div><div class="flex gap-2 w-full md:w-auto justify-center"><button class="export-table-btn btn-action" data-table="financials-table" data-filename="Financials_Report">${T.exportCSV}</button><button class="print-page-btn btn-print">${T.print}</button></div></div><div class="print-area"><div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6"><div class="bg-green-100 p-4 rounded-lg text-center shadow-md"><p class="text-lg font-semibold text-green-800">${T.inflows}</p><p id="total-inflows" class="text-2xl font-bold text-green-700">0.000</p></div><div class="bg-red-100 p-4 rounded-lg text-center shadow-md"><p class="text-lg font-semibold text-red-800">${T.outflows}</p><p id="total-outflows" class="text-2xl font-bold text-red-700">0.000</p></div><div class="bg-sky-100 p-4 rounded-lg text-center shadow-md"><p class="text-lg font-semibold text-sky-800">${T.treasuryBalance}</p><p id="treasury-balance" class="text-2xl font-bold text-sky-700">0.000</p></div></div><div class="bg-white rounded-xl shadow-md overflow-hidden"><div class="overflow-x-auto"><table id="financials-table" class="min-w-full text-center responsive-table"><thead class="bg-gray-100 text-gray-600 font-bold"><tr><th class="p-3">${T.paymentDate}</th><th class="p-3">${T.source}</th><th class="p-3">${T.paymentType}</th><th class="p-3">${T.amount}</th><th class="p-3 no-print">${T.actions}</th></tr></thead><tbody class="divide-y divide-gray-200">${db.financials.sort((a,b)=>new Date(b.date)-new Date(a.date)).map(f=>`<tr data-type="${f.type}" data-date="${f.date}"><td data-label="${T.paymentDate}" class="p-3">${formatDate(f.date)}</td><td data-label="${T.source}" class="p-3">${f.source}</td><td data-label="${T.paymentType}" class="p-3">${T.paymentTypes[f.type]}</td><td data-label="${T.amount}" class="p-3 font-bold text-green-600">${Number(f.amount).toFixed(3)}</td><td data-label="${T.actions}" class="p-3 no-print"><button class="text-red-600 hover:text-red-800 delete-btn" data-type="financials" data-id="${f.id}" data-permission="financials">${T.delete}</button></td></tr>`).join('')||`<tr><td colspan="5" class="p-6 text-center text-gray-500">لا توجد إيرادات.</td></tr>`}</tbody></table></div></div></div>`; applyFinancialFilters(c); };
+    const renderExpenses = (c) => { const filters = [{column:'category', options: T.expenseCategories}]; c.innerHTML = `<div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-6 no-print"><button id="add-expense-btn" class="btn-primary" data-permission="expenses">${T.addExpense}</button><div class="flex-grow w-full"><div class="grid grid-cols-1 md:grid-cols-3 gap-2 mb-2">${createFilterControls(filters)}<input type="date" class="table-filter p-2 border rounded-lg bg-white" data-filter-column="date_from" placeholder="${T.dateFrom}"><input type="date" class="table-filter p-2 border rounded-lg bg-white" data-filter-column="date_to" placeholder="${T.dateTo}"></div><input class="table-search w-full p-2 border rounded-lg" type="text" placeholder="${T.searchPlaceholder}"></div><div class="flex gap-2 w-full md:w-auto justify-center"><button class="export-table-btn btn-action" data-table="expenses-table" data-filename="Expenses_Report">${T.exportCSV}</button><button class="print-page-btn btn-print">${T.print}</button></div></div><div class="bg-white rounded-xl shadow-md overflow-hidden print-area"><div class="overflow-x-auto"><table id="expenses-table" class="min-w-full text-center responsive-table"><thead class="bg-gray-100 text-gray-600 font-bold"><tr><th class="p-3">${T.paymentDate}</th><th class="p-3">${T.expenseDescription}</th><th class="p-3">${T.expenseCategory}</th><th class="p-3">${T.amount}</th><th class="p-3 no-print">${T.actions}</th></tr></thead><tbody class="divide-y divide-gray-200">${db.expenses.sort((a,b)=>new Date(b.date)-new Date(a.date)).map(ex=>`<tr data-category="${ex.category}" data-date="${ex.date}"><td data-label="${T.paymentDate}" class="p-3">${formatDate(ex.date)}</td><td data-label="${T.expenseDescription}" class="p-3">${ex.description}</td><td data-label="${T.expenseCategory}" class="p-3">${T.expenseCategories[ex.category]}</td><td data-label="${T.amount}" class="p-3 font-bold text-red-600">${Number(ex.amount).toFixed(3)}</td><td data-label="${T.actions}" class="p-3 no-print"><button class="text-red-600 hover:text-red-800 delete-btn" data-type="expenses" data-id="${ex.id}" data-permission="expenses">${T.delete}</button></td></tr>`).join('')||`<tr><td colspan="5" class="p-6 text-center text-gray-500">لا توجد مصروفات.</td></tr>`}</tbody></table></div></div>`; applyFinancialFilters(c); };
+    const renderSettings = (c) => { c.innerHTML = `<div class="bg-white p-6 rounded-lg shadow-md"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold">${T.userManagement}</h3><button id="add-user-btn" class="btn-primary" data-permission="settings">${T.addUser}</button></div><div class="overflow-x-auto"><table class="min-w-full text-center"><thead class="bg-gray-100"><tr><th class="p-3">${T.username}</th><th class="p-3">${T.employeeName}</th><th class="p-3">${T.permissions}</th><th class="p-3">${T.actions}</th></tr></thead><tbody>${db.users.map(u=>`<tr class="border-b"><td class="p-3">${u.username}</td><td class="p-3">${u.name}</td><td class="p-3 text-xs">${u.permissions.join(', ')}</td><td data-label="${T.actions}" class="p-3"><button class="text-amber-600 hover:text-amber-800 mx-2 edit-user-btn" data-id="${u.id}" data-permission="settings">${T.edit}</button>${u.id!==currentUser.id?`<button class="text-red-600 hover:text-red-800 delete-btn" data-type="users" data-id="${u.id}" data-permission="settings">${T.delete}</button>`:''}</td></tr>`).join('')}</tbody></table></div></div>`; };
+    const renderActivityLog = (c) => { c.innerHTML = `<div class="bg-white p-6 rounded-lg shadow-md"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold">${T.activityLog}</h3><button class="print-page-btn btn-print no-print">${T.print}</button></div><div class="overflow-y-auto max-h-[70vh] print-area">${db.activityLog.map(log=>`<div class="border-b py-2"><p class="text-sm">${log.description}</p><p class="text-xs text-gray-500">${log.user} - ${formatDateTime(log.timestamp)}</p></div>`).join('')||'<p class="text-center text-gray-500">لا يوجد نشاط مسجل.</p>'}</div></div>`; };
+    const renderAssets = (c) => { const filters = [{column:'category', options: T.assetCategories}, {column:'status', options: T.assetStatuses}]; c.innerHTML = `<div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-6 no-print"><button id="add-asset-btn" class="btn-primary w-full md:w-auto" data-permission="assets">${T.addAsset}</button><div class="flex-grow w-full"><div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">${createFilterControls(filters)}</div><input class="table-search w-full p-2 border rounded-lg" type="text" placeholder="${T.searchPlaceholder}"></div><div class="flex gap-2 w-full md:w-auto justify-center"><button class="export-table-btn btn-action" data-table="assets-table" data-filename="Assets_Report">${T.exportCSV}</button><button class="print-page-btn btn-print">${T.print}</button></div></div><div class="bg-white rounded-xl shadow-md overflow-hidden print-area"><div class="overflow-x-auto"><table id="assets-table" class="min-w-full text-center responsive-table"><thead class="bg-gray-100 text-gray-600 font-bold"><tr><th class="p-3">${T.assetName}</th><th class="p-3">${T.assetCategory}</th><th class="p-3">${T.purchaseDate}</th><th class="p-3">${T.assetStatus}</th><th class="p-3 no-print">${T.actions}</th></tr></thead><tbody class="divide-y divide-gray-200">${(db.assets||[]).map(a=>`<tr data-category="${a.category}" data-status="${a.status}"><td data-label="${T.assetName}" class="p-3 font-semibold">${a.name}</td><td data-label="${T.assetCategory}" class="p-3">${T.assetCategories[a.category]||a.category}</td><td data-label="${T.purchaseDate}" class="p-3">${formatDate(a.purchaseDate)}</td><td data-label="${T.assetStatus}" class="p-3"><span class="px-2 py-1 text-xs font-bold rounded-full ${getStatusClass(a.status)}">${T.assetStatuses[a.status]||a.status}</span></td><td data-label="${T.actions}" class="p-3 no-print"><button class="text-amber-600 hover:text-amber-800 mx-2 edit-asset-btn" data-id="${a.id}" data-permission="assets">${T.edit}</button><button class="text-red-600 hover:text-red-800 delete-btn" data-type="assets" data-id="${a.id}" data-permission="assets">${T.delete}</button></td></tr>`).join('')||`<tr><td colspan="5" class="p-6 text-center text-gray-500">${T.noAssets}</td></tr>`}</tbody></table></div></div>`; };
+    const renderMeetings = (c) => { const filters = [{column:'status', options: T.meetingStatuses}]; c.innerHTML = `<div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-6 no-print"><button id="add-meeting-btn" class="btn-primary w-full md:w-auto" data-permission="meetings">${T.addMeeting}</button><div class="flex-grow w-full"><div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">${createFilterControls(filters)}</div><input class="table-search w-full p-2 border rounded-lg" type="text" placeholder="${T.searchPlaceholder}"></div><div class="flex gap-2 w-full md:w-auto justify-center"><button class="export-table-btn btn-action" data-table="meetings-table" data-filename="Meetings_Report">${T.exportCSV}</button><button class="print-page-btn btn-print">${T.print}</button></div></div><div class="bg-white rounded-xl shadow-md overflow-hidden print-area"><div class="overflow-x-auto"><table id="meetings-table" class="min-w-full text-center responsive-table"><thead class="bg-gray-100 text-gray-600 font-bold"><tr><th class="p-3">${T.meetingTitle}</th><th class="p-3">${T.meetingDate}</th><th class="p-3">${T.meetingStatus}</th><th class="p-3 no-print">${T.actions}</th></tr></thead><tbody class="divide-y divide-gray-200">${(db.meetings||[]).sort((a,b)=>new Date(b.date)-new Date(a.date)).map(m=>`<tr data-status="${m.status}"><td data-label="${T.meetingTitle}" class="p-3 font-semibold">${m.title}</td><td data-label="${T.meetingDate}" class="p-3">${formatDate(m.date)}</td><td data-label="${T.meetingStatus}" class="p-3"><span class="px-2 py-1 text-xs font-bold rounded-full ${getStatusClass(m.status)}">${T.meetingStatuses[m.status]||m.status}</span></td><td data-label="${T.actions}" class="p-3 no-print"><div class="flex justify-center items-center gap-3"><button class="text-sky-600 hover:text-sky-800 view-meeting-btn" data-id="${m.id}">${T.details}</button><button class="text-amber-600 hover:text-amber-800 edit-meeting-btn" data-id="${m.id}" data-permission="meetings">${T.edit}</button><button class="text-red-600 hover:text-red-800 delete-btn" data-type="meetings" data-id="${m.id}" data-permission="meetings">${T.delete}</button></div></td></tr>`).join('')||`<tr><td colspan="4" class="p-6 text-center text-gray-500">${T.noMeetings}</td></tr>`}</tbody></table></div></div>`; };
+    const renderMeetingDetails = (meetingId) => { const item = (db.meetings||[]).find(m => m.id == meetingId); if (!item) return; const content = `<div class="space-y-4"><div><p class="font-semibold text-gray-500">${T.meetingDate}</p><p>${formatDate(item.date)}</p></div><div><p class="font-semibold text-gray-500">${T.attendees}</p><p class="whitespace-pre-wrap">${item.attendees}</p></div><div><p class="font-semibold text-gray-500">${T.agenda}</p><p class="whitespace-pre-wrap bg-gray-50 p-2 rounded-md">${item.agenda}</p></div><div><p class="font-semibold text-gray-500">${T.decisions}</p><p class="whitespace-pre-wrap bg-gray-50 p-2 rounded-md">${item.decisions}</p></div><div class="flex justify-end"><button id="summarize-meeting-btn" class="btn-gemini" data-permission="gemini_features">${T.summarizeMeeting}</button></div><div id="gemini-summary-container" class="mt-4 hidden"></div></div>`; openModal(`${T.meetingTitle}: ${item.title}`, content, 'max-w-3xl'); };
+    const renderTasks = (c) => { const filters = [{column:'status', options: T.taskStatuses}, {column:'priority', options: T.priorities}, {column:'assignedTo', options: db.employees.reduce((acc, e) => ({...acc, [e.id]: e.name}), {all: 'الكل'})}]; c.innerHTML = `<div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-6 no-print"><button id="add-task-btn" class="btn-primary w-full md:w-auto" data-permission="tasks">${T.addTask}</button><div class="flex-grow w-full"><div class="grid grid-cols-1 md:grid-cols-3 gap-2 mb-2">${createFilterControls(filters)}</div><input class="table-search w-full p-2 border rounded-lg" type="text" placeholder="${T.searchPlaceholder}"></div></div><div class="bg-white rounded-xl shadow-md overflow-hidden"><div class="overflow-x-auto"><table id="tasks-table" class="min-w-full text-center responsive-table"><thead class="bg-gray-100 text-gray-600 font-bold"><tr><th class="p-3">${T.taskTitle}</th><th class="p-3">${T.assignedTo}</th><th class="p-3">${T.dueDate}</th><th class="p-3">${T.priority}</th><th class="p-3">${T.taskStatus}</th><th class="p-3 no-print">${T.actions}</th></tr></thead><tbody class="divide-y divide-gray-200">${(db.tasks||[]).map(t=>`<tr data-status="${t.status}" data-priority="${t.priority}" data-assignedTo="${t.assignedTo}"><td data-label="${T.taskTitle}" class="p-3 font-semibold">${t.title}</td><td data-label="${T.assignedTo}" class="p-3">${db.employees.find(e=>e.id==t.assignedTo)?.name || '-'}</td><td data-label="${T.dueDate}" class="p-3">${formatDate(t.dueDate)}</td><td data-label="${T.priority}" class="p-3"><span class="px-2 py-1 text-xs font-bold rounded-full ${getStatusClass(t.priority)}">${T.priorities[t.priority]||t.priority}</span></td><td data-label="${T.taskStatus}" class="p-3"><span class="px-2 py-1 text-xs font-bold rounded-full ${getStatusClass(t.status)}">${T.taskStatuses[t.status]||t.status}</span></td><td data-label="${T.actions}" class="p-3 no-print"><button class="text-amber-600 hover:text-amber-800 edit-task-btn" data-id="${t.id}" data-permission="tasks">${T.edit}</button><button class="text-red-600 hover:text-red-800 delete-btn" data-type="tasks" data-id="${t.id}" data-permission="tasks">${T.delete}</button></td></tr>`).join('')||`<tr><td colspan="6" class="p-6 text-center text-gray-500">${T.noTasks}</td></tr>`}</tbody></table></div></div>`; };
+
+    const renderReports = (container) => {
+        container.innerHTML = `<div class="bg-white p-6 rounded-xl shadow-lg mb-6 no-print"><div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-end"><div><label for="report-period-value" class="block text-sm font-bold text-gray-700 mb-2">${T.selectPeriod}</label><select id="report-period-value" class="w-full p-3 border rounded-lg bg-white"></select></div></div></div><div id="report-content-area"></div>`;
+        const periodSelector = container.querySelector('#report-period-value');
+        const reportContentArea = container.querySelector('#report-content-area');
+        const updatePeriodSelector = () => {
+            let optionsHtml = '';
+            const currentYear = new Date().getFullYear();
+            for (let i = 0; i < 3; i++) { optionsHtml += `<option value="${currentYear - i}">${T.annually} ${currentYear - i}</option>`; }
+            for (let i = 0; i < 4; i++) { const qDate = new Date(new Date().setMonth(new Date().getMonth() - i * 3)); const year = qDate.getFullYear(); const quarter = Math.floor(qDate.getMonth() / 3) + 1; optionsHtml += `<option value="${year}-Q${quarter}">الربع Q${quarter} - ${year}</option>`; }
+            for (let i = 0; i < 12; i++) { const mDate = new Date(new Date().setMonth(new Date().getMonth() - i)); optionsHtml += `<option value="${mDate.getFullYear()}-${String(mDate.getMonth() + 1).padStart(2, '0')}">${T.monthly} ${mDate.toLocaleString('ar-KW', { month: 'long', year: 'numeric' })}</option>`; }
+            periodSelector.innerHTML = optionsHtml;
+            periodSelector.addEventListener('change', generateReport);
+            generateReport();
+        };
+        const generateReport = () => {
+            const value = periodSelector.value;
+            let startDate, endDate;
+            if (value.includes('-Q')) { const [year, quarter] = value.split('-Q'); const q = parseInt(quarter); startDate = new Date(year, (q - 1) * 3, 1); endDate = new Date(year, q * 3, 0, 23, 59, 59); }
+            else if (value.includes('-')) { const [year, month] = value.split('-').map(Number); startDate = new Date(year, month - 1, 1); endDate = new Date(year, month, 0, 23, 59, 59); }
+            else { startDate = new Date(value, 0, 1); endDate = new Date(value, 11, 31, 23, 59, 59); }
+            
+            const filteredCases = db.cases.filter(c => new Date(c.creationDate) >= startDate && new Date(c.creationDate) <= endDate);
+            const filteredFinancials = db.financials.filter(f => new Date(f.date) >= startDate && new Date(f.date) <= endDate);
+            const filteredExpenses = db.expenses.filter(e => new Date(e.date) >= startDate && new Date(e.date) <= endDate);
+            const caseTypeCounts = filteredCases.reduce((acc, c) => { acc[c.caseType] = (acc[c.caseType] || 0) + 1; return acc; }, {});
+            const caseStatusCounts = filteredCases.reduce((acc, c) => { acc[c.status] = (acc[c.status] || 0) + 1; return acc; }, {});
+            const totalInflows = filteredFinancials.reduce((sum, item) => sum + Number(item.amount), 0);
+            const totalOutflows = filteredExpenses.reduce((sum, item) => sum + Number(item.amount), 0);
+            const balance = totalInflows - totalOutflows;
+
+            reportContentArea.innerHTML = `<div class="print-area mt-6"><div class="flex justify-between items-center mb-6"><h3 class="text-2xl font-bold">${T.reportsTitle} - ${value}</h3><button id="print-report-btn" class="btn-print no-print">${T.printReport}</button></div><div class="grid grid-cols-1 md:grid-cols-2 gap-6"><div class="bg-white p-6 rounded-lg shadow"><h4 class="font-bold text-lg mb-4">${T.casesByType}</h4>${Object.keys(caseTypeCounts).length > 0 ? Object.entries(caseTypeCounts).map(([type, count]) => `<div class="flex justify-between py-2 border-b"><span>${T.caseTypes[type] || type}</span><span class="font-bold bg-gray-200 px-2 rounded-full">${count}</span></div>`).join('') : '<p class="text-gray-500">لا توجد بيانات</p>'}</div><div class="bg-white p-6 rounded-lg shadow"><h4 class="font-bold text-lg mb-4">${T.casesByStatus}</h4>${Object.keys(caseStatusCounts).length > 0 ? Object.entries(caseStatusCounts).map(([status, count]) => `<div class="flex justify-between py-2 border-b"><span>${T.caseStatuses[status] || status}</span><span class="font-bold px-2 rounded-full ${getStatusClass(status)}">${count}</span></div>`).join('') : '<p class="text-gray-500">لا توجد بيانات</p>'}</div><div class="bg-white p-6 rounded-lg shadow md:col-span-2"><h4 class="font-bold text-lg mb-4">${T.financialSummary}</h4><div class="grid grid-cols-3 gap-4 text-center"><div><p class="text-green-600">${T.inflows}</p><p class="text-2xl font-bold">${totalInflows.toFixed(3)}</p></div><div><p class="text-red-600">${T.outflows}</p><p class="text-2xl font-bold">${totalOutflows.toFixed(3)}</p></div><div><p class="text-blue-600">${T.treasuryBalance}</p><p class="text-2xl font-bold">${balance.toFixed(3)}</p></div></div></div></div></div>`;
+            reportContentArea.querySelector('#print-report-btn').addEventListener('click', () => { printWithBarcode(reportContentArea.querySelector('.print-area').innerHTML, `${T.reportsTitle} - ${value}`, `REPORT-${value}-${Date.now()}`); });
+        };
+        updatePeriodSelector();
+    };
+    
+    const renderCaseDetails = async (caseId) => {
+        const caseItem = db.cases.find(c => c.caseId == caseId); if (!caseItem) return;
+        const updatesLog = caseItem.updates.map(up => `<div class="border-b py-3"><p class="font-semibold">${up.details}</p><p class="text-xs text-gray-500 mt-1">بواسطة: ${up.updatedBy} | ${formatDateTime(up.updateDate)}</p></div>`).join('');
+        const content = `<div class="print-area"><div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6"><div><p class="font-semibold text-gray-500">${T.beneficiaryName}</p><p class="text-lg font-bold">${caseItem.beneficiaryName}</p></div><div><p class="font-semibold text-gray-500">${T.beneficiaryPhone}</p><p class="text-lg font-bold">${caseItem.beneficiaryPhone || '-'}</p></div><div><p class="font-semibold text-gray-500">${T.caseStatus}</p><p class="text-lg font-bold"><span class="px-2 py-1 rounded-full ${getStatusClass(caseItem.status)}">${T.caseStatuses[caseItem.status]}</span></p></div></div><div class="mb-6"><p class="font-semibold text-gray-500">وصف الحالة</p><p>${caseItem.description}</p></div><hr class="my-4"><div id="attached-docs-container"></div><hr class="my-4"><div><h4 class="text-xl font-bold mb-4">${T.caseUpdatesLog}</h4><div class="bg-gray-50 p-4 rounded-lg max-h-64 overflow-y-auto mb-4">${updatesLog}</div></div><div class="flex justify-end"><button id="summarize-case-btn" data-case-id="${caseItem.caseId}" class="btn-gemini" data-permission="gemini_features">${T.summarizeCase}</button></div><div id="gemini-summary-container" class="mt-4 hidden"></div></div><form id="add-update-form" class="no-print"><input type="hidden" name="caseId" value="${caseItem.caseId}">${createTextarea(T.addCaseUpdate, 'updateDetails', true)}<div class="flex justify-end mt-4"><button type="submit" class="btn-primary" data-permission="cases">${T.save}</button></div></form>`;
+        openModal(`${T.caseFile} #${caseItem.caseId}`, content, 'max-w-4xl');
+        const docsContainer = document.getElementById('attached-docs-container');
+        const allDocs = await getAllFiles(); const attachedDocs = allDocs.filter(doc => doc.association && doc.association.type === 'case' && doc.association.id == caseId);
+        let docsHtml = `<div class="flex justify-between items-center mb-4"><h4 class="text-xl font-bold">${T.attachedDocuments}</h4><button id="add-case-doc-btn" data-case-id="${caseItem.caseId}" class="btn-action" data-permission="cases">${T.addDocument}</button></div>`;
+        if (attachedDocs.length > 0) { docsHtml += `<div class="bg-gray-50 p-4 rounded-lg space-y-3">` + attachedDocs.map(doc => `<div class="flex justify-between items-center p-2 border-b"><p class="font-semibold">${doc.description || doc.fileName}</p><div class="flex items-center gap-3">${isFileTypePreviewable(doc.file)?`<button class="text-sky-600 hover:text-sky-800 text-sm font-bold view-doc-btn" data-id="${doc.id}">${T.view}</button>`:''}<button class="text-emerald-600 hover:text-emerald-800 text-sm font-bold download-doc-btn" data-id="${doc.id}">${T.download}</button><button class="text-red-600 hover:text-red-800 text-sm font-bold delete-btn" data-type="documents" data-id="${doc.id}" data-permission="documentArchive">${T.delete}</button></div></div>`).join('') + `</div>`; } else { docsHtml += `<p class="text-gray-500">${T.noAttachedDocs}</p>`; }
+        docsContainer.innerHTML = docsHtml;
+    };
+
+    const isFileTypePreviewable = (file) => file && ['image/', 'application/pdf', 'text/'].some(type => file.type.startsWith(type));
+    const escapeHTML = (str) => { const p = document.createElement("p"); p.textContent = str; return p.innerHTML; };
+    const previewFile = async (docId) => { const doc = await getFileById(docId); if (!doc) return; const url = URL.createObjectURL(doc.file); let pC = ''; if (doc.file.type.startsWith('image/')) { pC = `<img src="${url}" class="max-w-full max-h-[75vh] mx-auto">`; } else if (doc.file.type === 'application/pdf') { pC = `<embed src="${url}" type="application/pdf" class="w-full h-[80vh]">`; } else if (doc.file.type.startsWith('text/')) { const text = await doc.file.text(); pC = `<pre class="w-full h-[75vh] overflow-auto bg-gray-100 p-4 text-sm whitespace-pre-wrap">${escapeHTML(text)}</pre>`; } openModal(doc.description || doc.fileName, pC, 'max-w-6xl', () => URL.revokeObjectURL(url)); };
+    const formatAssociation = (doc) => { if (!doc.association || doc.association.type === 'general' || !doc.association.id) return T.associationTypes.general; const { type, id } = doc.association; let target, text = `${T.associationTypes[type] || type}: `; switch(type) { case 'case': target = db.cases.find(c => c.caseId == id); text += target ? `${target.caseId} - ${target.beneficiaryName}` : id; break; case 'member': target = db.members.find(m => m.id == id); text += target ? target.name : id; break; case 'employee': target = db.employees.find(e => e.id == id); text += target ? target.name : id; break; case 'asset': target = (db.assets||[]).find(a => a.id == id); text += target ? target.name : id; break; case 'meeting': target = (db.meetings||[]).find(m => m.id == id); text += target ? target.title : id; break; default: text = id; } return text; };
+    
+    const renderDocumentArchive = async (container) => {
+        const filters = [{column:'association_type', options: T.associationTypes}];
+        container.innerHTML = `<div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-6 no-print"><button id="add-document-btn" class="btn-primary w-full md:w-auto" data-permission="documentArchive">${T.addDocument}</button><div class="flex-grow w-full"><div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">${createFilterControls(filters)}</div><input class="table-search w-full p-2 border rounded-lg" type="text" placeholder="${T.searchPlaceholder}"></div></div><div class="bg-white rounded-xl shadow-md overflow-hidden"><div class="overflow-x-auto"><table id="docs-table" class="min-w-full responsive-table"><thead class="bg-gray-100 text-gray-600 font-bold"><tr><th class="p-3 text-right">${T.documentTitle}</th><th class="p-3 text-right">${T.fileName}</th><th class="p-3 text-center">${T.fileSize}</th><th class="p-3 text-right">مرتبط بـ</th><th class="p-3 text-center no-print">${T.actions}</th></tr></thead><tbody class="divide-y divide-gray-200"><tr><td colspan="5" class="p-6 text-center text-gray-500">${T.loading}</td></tr></tbody></table></div></div>`;
+        const docs = await getAllFiles(); const tbody = container.querySelector('#docs-table tbody');
+        if (docs.length > 0) {
+            tbody.innerHTML = docs.map(doc => `<tr data-association_type="${doc.association?.type || 'general'}"><td data-label="${T.documentTitle}" class="p-3 font-semibold text-right">${doc.description}</td><td data-label="${T.fileName}" class="p-3 text-right">${doc.fileName}</td><td data-label="${T.fileSize}" class="p-3 text-center">${formatBytes(doc.fileSize)}</td><td data-label="مرتبط بـ" class="p-3 text-right text-sm">${formatAssociation(doc)}</td><td data-label="${T.actions}" class="p-3 no-print text-center"><div class="flex justify-center items-center gap-4"> ${isFileTypePreviewable(doc.file) ? `<button class="text-sky-600 hover:text-sky-800 view-doc-btn" data-id="${doc.id}">${T.view}</button>` : ''} <button class="text-emerald-600 hover:text-emerald-800 download-doc-btn" data-id="${doc.id}">${T.download}</button> <button class="text-red-600 hover:text-red-800 delete-btn" data-type="documents" data-id="${doc.id}" data-permission="documentArchive">${T.delete}</button></div></td></tr>`).join('');
+        } else { tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-gray-500">${T.noDocuments}</td></tr>`; }
+    };
+    
+    const openDocumentModal = (prefill = {}) => {
+        let associationHtml = createSelect(T.associationType, 'association_type', T.associationTypes, prefill.type || 'general', true, `id="association-type" ${prefill.type ? 'disabled' : ''}`);
+        let targetHtml = `<div id="association-target-wrapper" class="${prefill.target ? '' : 'hidden'}"></div>`;
+        const content = createForm('modal-form', `
+            <input type="hidden" name="formType" value="addDocument">
+            ${createField(T.documentTitle, 'description')}
+            ${associationHtml}
+            ${targetHtml}
+            ${createField('الملف', 'file', 'file')}
+        `, `<button type="button" id="cancel-btn" class="btn-secondary">${T.cancel}</button><button type="submit" form="modal-form" class="btn-primary">${T.save}</button>`);
+        openModal(T.addDocument, content);
+
+        if (prefill.type && prefill.target) {
+            const targetWrapper = document.getElementById('association-target-wrapper');
+            let options = {};
+            options[prefill.target.id] = `${prefill.target.id} - ${prefill.target.name}`;
+            targetWrapper.innerHTML = createSelect(T.associationTarget, 'association_target', options, prefill.target.id, true, `id="association-target" disabled`);
+        }
+    };
+
+    const renderGreetings = (c) => { const holidays = { eid_alfitr: 'عيد الفطر المبارك', eid_aladha: 'عيد الأضحى المبارك', national_day: 'العيد الوطني الكويتي', liberation_day: 'عيد التحرير', new_year: 'رأس السنة الميلادية', isra_miraj: 'الإسراء والمعراج', mawlid: 'المولد النبوي الشريف' }; const templates = { eid_alfitr: 'بمناسبة حلول عيد الفطر المبارك، تتقدم لكم الجمعية الكويتية لحقوق الإنسان بأسمى آيات التهاني والتبريكات. كل عام وأنتم بخير، {name}!', eid_aladha: 'يطيب للجمعية الكويتية لحقوق الإنسان أن تهنئكم بعيد الأضحى المبارك. تقبل الله طاعتكم وكل عام وأنتم بخير، {name}!', national_day: 'في ذكرى العيد الوطني، ترفع الجمعية الكويتية لحقوق الإنسان أسمى التهاني والتبريكات. دمتم ودامت الكويت بخير وأمان، {name}.', liberation_day: 'تهانينا بمناسبة عيد التحرير. كل عام والكويت حرة أبية. مع تحيات الجمعية الكويتية لحقوق الإنسان، {name}.', new_year: 'كل عام وأنتم بخير بمناسبة العام الميلادي الجديد، {name}. تتمنى لكم الجمعية الكويتية لحقوق الإنسان عاماً مليئاً بالصحة والنجاح.', default: 'تتقدم لكم الجمعية الكويتية لحقوق الإنسان بأطيب التمنيات بهذه المناسبة السعيدة. كل عام وأنتم بخير، {name}!' }; let optionsHtml = '<option value="" disabled selected>-- اختر مناسبة --</option>'; for(const [key, text] of Object.entries(holidays)){ optionsHtml += `<option value="${key}">${text}</option>`; } c.innerHTML = `<div class="bg-white p-6 rounded-xl shadow-lg"><h3 class="text-xl font-bold mb-4">${T.greetingsPageTitle}</h3><div class="grid md:grid-cols-2 gap-6"><div><label for="occasion-select" class="block text-sm font-bold text-gray-700 mb-2">${T.selectOccasion}</label><select id="occasion-select" class="w-full p-3 border rounded-lg bg-white">${optionsHtml}</select></div><div><label for="message-template" class="block text-sm font-bold text-gray-700 mb-2">${T.messageContent}</label><textarea id="message-template" rows="4" class="w-full p-3 border rounded-lg bg-gray-50"></textarea><p class="text-xs text-gray-500 mt-1">استخدم {name} ليتم استبداله باسم العضو.</p></div></div><div class="mt-6 text-center"><button id="generate-links-btn" class="btn-primary">${T.generateLinks}</button></div></div><div id="links-results" class="mt-6 bg-white p-6 rounded-xl shadow-lg hidden"></div>`; const oS = c.querySelector('#occasion-select'); const mT = c.querySelector('#message-template'); const gB = c.querySelector('#generate-links-btn'); const lR = c.querySelector('#links-results'); oS.addEventListener('change', () => { mT.value = templates[oS.value] || templates.default; }); gB.addEventListener('click', () => { const msg = mT.value; if(!msg) return; const membersWithPhones = db.members.filter(m => m.phone); let linksHtml = `<h4 class="text-lg font-bold mb-4">${T.greetingLinks} (${membersWithPhones.length})</h4><p class="text-sm text-gray-600 mb-4">${T.clickToSend}</p><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">`; membersWithPhones.forEach(m => { const phone = m.phone.replace(/[^0-9]/g, ''); const fullPhone = phone.startsWith('965') ? phone : `965${phone}`; const personalizedMsg = encodeURIComponent(msg.replace('{name}', m.name)); const url = `https://wa.me/${fullPhone}?text=${personalizedMsg}`; linksHtml += `<a href="${url}" target="_blank" class="block bg-gray-100 p-3 rounded-lg hover:bg-sky-100 transition-colors">${m.name} <span class="text-sm text-gray-500">(${m.phone})</span></a>`; }); linksHtml += `</div>`; lR.innerHTML = linksHtml; lR.classList.remove('hidden'); }); };
+    
+    const saveFile = (d) => new Promise((res, rej) => { const t = filesDB.transaction([FILES_STORE_NAME], 'readwrite'); t.objectStore(FILES_STORE_NAME).add(d).onsuccess = (e) => res(e.target.result); t.onerror = (e) => rej(e.target.error); });
+    const getAllFiles = () => new Promise((res, rej) => { if (!filesDB) return res([]); const t = filesDB.transaction([FILES_STORE_NAME], 'readonly'); t.objectStore(FILES_STORE_NAME).getAll().onsuccess = (e) => res(e.target.result.sort((a, b) => b.id - a.id)); t.onerror = (e) => rej(e.target.error); });
+    const getFileById = (id) => new Promise((res, rej) => { if (!filesDB) return rej('DB not init'); const t = filesDB.transaction([FILES_STORE_NAME], 'readonly'); t.objectStore(FILES_STORE_NAME).get(id).onsuccess = (e) => res(e.target.result); t.onerror = (e) => rej(e.target.error); });
+    const deleteFileById = (id) => new Promise((res, rej) => { const t = filesDB.transaction([FILES_STORE_NAME], 'readwrite'); t.objectStore(FILES_STORE_NAME).delete(id).onsuccess = () => res(); t.onerror = (e) => rej(e.target.error); });
+    const deleteFilesByAssociation = async (type, id) => { const allDocs = await getAllFiles(); const docsToDelete = allDocs.filter(doc => doc.association && doc.association.type === type && doc.association.id == id); for (const doc of docsToDelete) { await deleteFileById(doc.id); } };
+    
+    const handleFormSubmit = async (e) => { 
+        e.preventDefault(); 
+        const form = e.target; 
+        const formData = new FormData(form); 
+        const data = Object.fromEntries(formData.entries()); 
+        let saved = false;
+
+        const actions = { 
+            addCase:()=>{db.cases.push({caseId:Date.now(),beneficiaryName:data.beneficiaryName,beneficiaryPhone:data.beneficiaryPhone,caseType:data.caseType,description:data.description,status:'new',creationDate:new Date().toISOString(),updates:[{updateDate:new Date().toISOString(),updatedBy:currentUser.name,details:"تم إنشاء ملف الحالة."}]});logActivity(`فتح حالة جديدة: ${data.beneficiaryName}`);saved=true}, 
+            editCase:()=>{const i=db.cases.find(c=>c.caseId==data.caseId);if(i){Object.assign(i,{beneficiaryName:data.beneficiaryName,beneficiaryPhone:data.beneficiaryPhone,caseType:data.caseType,status:data.status,description:data.description});logActivity(`تعديل حالة #${data.caseId}`);saved=true}}, 
+            addCaseUpdate:()=>{const i=db.cases.find(c=>c.caseId==data.caseId);if(i){i.updates.unshift({updateDate:new Date().toISOString(),updatedBy:currentUser.name,details:data.updateDetails});logActivity(`إضافة تحديث لحالة #${data.caseId}`);saveDB();showToast(T.saveSuccess);renderCaseDetails(data.caseId)}}, 
+            addMember:()=>{if(!/^\d{12}$/.test(data.civilId)){showToast(T.civilIdError,'error');return}db.counters.member=(db.counters.member||0)+1;db.members.push({id:db.counters.member,name:data.name,civilId:data.civilId,phone:data.phone,email:data.email,type:data.type,status:'active',joinDate:new Date().toISOString(),membershipExpiry:new Date(new Date().getFullYear(),11,31).toISOString()});logActivity(`إضافة عضو: ${data.name}`);saved=true}, 
+            editMember:()=>{const i=db.members.find(m=>m.id==data.memberId);if(i){if(!/^\d{12}$/.test(data.civilId)){showToast(T.civilIdError,'error');return}Object.assign(i,{name:data.name,civilId:data.civilId,phone:data.phone,email:data.email,type:data.type,status:data.status,joinDate:data.joinDate,membershipExpiry:data.membershipExpiry});logActivity(`تعديل عضو: ${data.name}`);saved=true}}, 
+            addEmployee:()=>{db.counters.employee=(db.counters.employee||0)+1; db.employees.push({id:db.counters.employee,name:data.name,civilId:data.civilId,jobTitle:data.jobTitle,phone:data.phone,department:data.department,hireDate:data.hireDate,residencyExpiry:data.residencyExpiry,status:'active'}); logActivity(`إضافة موظف: ${data.name}`);saved=true;}, 
+            editEmployee:()=>{const i=db.employees.find(em=>em.id==data.employeeId);if(i){ Object.assign(i, {name:data.name,civilId:data.civilId,jobTitle:data.jobTitle,phone:data.phone,department:data.department,hireDate:data.hireDate,residencyExpiry:data.residencyExpiry,status:data.status}); logActivity(`تعديل موظف: ${data.name}`);saved=true;}}, 
+            addTask:()=>{db.counters.task=(db.counters.task||0)+1; const linkData = data.linkTo.split('-'); const link = data.linkTo === 'none' ? null : { type: linkData[0], id: linkData[1] }; db.tasks.push({id:db.counters.task,title:data.title,assignedTo:parseInt(data.assignedTo),dueDate:data.dueDate,priority:data.priority,status:'new',link:link});logActivity(`إضافة مهمة: ${data.title}`);saved=true},
+            editTask:()=>{const i=db.tasks.find(t=>t.id==data.taskId);if(i){ const linkData = data.linkTo.split('-'); const link = data.linkTo === 'none' ? null : { type: linkData[0], id: linkData[1] }; Object.assign(i,{title:data.title,assignedTo:parseInt(data.assignedTo),dueDate:data.dueDate,priority:data.priority,status:data.status,link:link});logActivity(`تعديل مهمة: ${data.title}`);saved=true}},
+            addDonation:()=>{db.financials.push({id:Date.now(),date:data.date,source:data.source,type:data.type,amount:Number(data.amount)});logActivity(`إضافة إيراد: ${data.source}`);saved=true}, 
+            addExpense:()=>{db.expenses.push({id:Date.now(),date:data.date,description:data.description,category:data.category,amount:Number(data.amount)});logActivity(`إضافة مصروف: ${data.description}`);saved=true}, 
+            addAsset:()=>{db.counters.asset=(db.counters.asset||0)+1;db.assets.push({id:db.counters.asset,name:data.name,category:data.category,purchaseDate:data.purchaseDate,status:data.status});logActivity(`إضافة أصل: ${data.name}`);saved=true},
+            editAsset:()=>{const i=db.assets.find(a=>a.id==data.assetId);if(i){Object.assign(i,{name:data.name,category:data.category,purchaseDate:data.purchaseDate,status:data.status});logActivity(`تعديل أصل: ${data.name}`);saved=true}},
+            addMeeting:()=>{db.counters.meeting=(db.counters.meeting||0)+1;db.meetings.push({id:db.counters.meeting,title:data.title,date:data.date,attendees:data.attendees,agenda:data.agenda,decisions:data.decisions,status:'completed'});logActivity(`إضافة محضر اجتماع: ${data.title}`);saved=true},
+            editMeeting:()=>{const i=db.meetings.find(m=>m.id==data.meetingId);if(i){Object.assign(i,{title:data.title,date:data.date,attendees:data.attendees,agenda:data.agenda,decisions:data.decisions,status:data.status});logActivity(`تعديل محضر اجتماع: ${data.title}`);saved=true}},
+            addDocument:async()=>{ const f=form.querySelector('input[type="file"]'); if(f.files.length>0){ const i=f.files[0]; const associationId=data.association_type !=='general'?data.association_target:null; const a={type:data.association_type, id:associationId}; await saveFile({id:Date.now(),file:i,fileName:i.name,fileType:i.type,fileSize:i.size,description:data.description,association:a,uploadDate:new Date().toISOString(),uploadedBy:currentUser.name}); logActivity(`أرشفة ملف: ${i.name}`); showToast(T.uploadSuccess); document.getElementById('modal-container').innerHTML=''; const activeLink=document.querySelector('.nav-link.active'); if(activeLink.dataset.page==='documentArchive'){await renderPage('documentArchive');} else if(data.association_type==='employee'){await renderEmployeeDetails(data.association_target);} else if(data.association_type==='member'){await renderMemberDetails(data.association_target);} }else{showToast(T.fileSelectError,'error')}}, 
+            addUser:()=>{db.counters.user=(db.counters.user||0)+1;db.users.push({id:db.counters.user,username:data.username,password:data.password,name:data.name,permissions:data.permissions.split(',').map(p=>p.trim()).filter(Boolean)});logActivity(`إضافة مستخدم: ${data.name}`);saved=true}, 
+            editUser:()=>{const i=db.users.find(u=>u.id==data.userId);if(i){Object.assign(i,{name:data.name,username:data.username,permissions:data.permissions.split(',').map(p=>p.trim()).filter(Boolean)});if(data.password)i.password=data.password;logActivity(`تعديل مستخدم: ${data.name}`);saved=true}}, 
+            changePassword:()=>{if(data.current_password!==currentUser.password){showToast(T.passwordIncorrect,'error');return}if(data.new_password!==data.confirm_new_password){showToast(T.passwordMismatch,'error');return}const i=db.users.find(u=>u.id===currentUser.id);i.password=data.new_password;currentUser.password=data.new_password;logActivity('تغيير كلمة المرور');saved=true}
+        }; 
+        if (actions[data.formType]) { await actions[data.formType](); } 
+        if (saved) { saveDB(); showToast(T.saveSuccess); document.getElementById('modal-container').innerHTML = ''; const activeLink = document.querySelector('.nav-link.active'); if (activeLink) await renderPage(activeLink.dataset.page); } 
+    };
+
+    const setupEventListeners = () => {
+        document.body.addEventListener('click', async (e) => {
+            const target = e.target.closest('button, a'); if (!target) return;
+            const formButtons = `<button type="button" id="cancel-btn" class="btn-secondary">${T.cancel}</button><button type="submit" form="modal-form" class="btn-primary">${T.save}</button>`;
+            
+            if (target.id === 'my-profile-btn') openModal(T.changePassword, createForm('modal-form', `<input type="hidden" name="formType" value="changePassword">${createField(T.currentPassword, 'current_password', 'password')}${createField(T.newPassword, 'new_password', 'password')}${createField(T.confirmNewPassword, 'confirm_new_password', 'password')}`, formButtons));
+            else if (target.id === 'add-case-btn') openModal(T.addCase, createForm('modal-form', `<input type="hidden" name="formType" value="addCase">${createField(T.beneficiaryName, 'beneficiaryName')}${createField(T.beneficiaryPhone, 'beneficiaryPhone', 'tel', false)}${createSelect(T.caseType, 'caseType', T.caseTypes, '', true)}${createTextarea(T.caseDetails, 'description')}`, formButtons));
+            else if (target.classList.contains('edit-case-btn')) { const i = db.cases.find(c=>c.caseId==target.dataset.id); if(i) openModal(T.edit, createForm('modal-form', `<input type="hidden" name="formType" value="editCase"><input type="hidden" name="caseId" value="${i.caseId}">${createField(T.beneficiaryName, 'beneficiaryName', 'text', true, i.beneficiaryName)}${createField(T.beneficiaryPhone, 'beneficiaryPhone', 'tel', false, i.beneficiaryPhone || '')}${createSelect(T.caseType, 'caseType', T.caseTypes, i.caseType)}${createSelect(T.caseStatus, 'status', T.caseStatuses, i.status)}${createTextarea(T.description, 'description', true, i.description)}`, formButtons)); }
+            else if (target.classList.contains('view-case-btn')) await renderCaseDetails(target.dataset.id);
+            else if (target.id === 'add-member-btn') openModal(T.addMember, createForm('modal-form', `<input type="hidden" name="formType" value="addMember">${createField(T.memberName, 'name')}${createField(T.civilId, 'civilId', 'text', true, '', {placeholder: T.civilIdError})}${createField(T.phone, 'phone', 'tel', false)}${createField(T.email, 'email', 'email', false)}${createSelect(T.membershipType, 'type', T.memberTypes)}`, formButtons));
+            else if (target.classList.contains('edit-member-btn')) { const i = db.members.find(m=>m.id==target.dataset.id); if(i) openModal(T.edit, createForm('modal-form', `<input type="hidden" name="formType" value="editMember"><input type="hidden" name="memberId" value="${i.id}">${createField(T.memberName, 'name', 'text', true, i.name)}${createField(T.civilId, 'civilId', 'text', true, i.civilId, {placeholder: T.civilIdError})}${createField(T.phone, 'phone', 'tel', false, i.phone)}${createField(T.email, 'email', 'email', false, i.email)}${createSelect(T.membershipType, 'type', T.memberTypes, i.type)}${createSelect(T.membershipStatus, 'status', T.memberStatuses, i.status)}${createField(T.joinDate, 'joinDate', 'date', true, i.joinDate.slice(0,10))}${createField(T.membershipExpiry, 'membershipExpiry', 'date', true, i.membershipExpiry.slice(0,10))}`, formButtons)); }
+            else if (target.classList.contains('view-member-btn')) await renderMemberDetails(target.dataset.id);
+            else if (target.id === 'add-member-doc-btn') { const memberId = target.dataset.memberId; const member = db.members.find(m => m.id == memberId); if (member) openDocumentModal({ type: 'member', target: { id: member.id, name: member.name } }); }
+            else if (target.id === 'add-employee-btn') { await openEmployeeModal(null); }
+            else if (target.classList.contains('edit-employee-btn')) { const i = db.employees.find(e=>e.id==target.dataset.id); if(i) await openEmployeeModal(i); }
+            else if (target.classList.contains('view-employee-btn')) await renderEmployeeDetails(target.dataset.id);
+            else if (target.id === 'add-employee-doc-btn') { const employeeId = target.dataset.employeeId; const employee = db.employees.find(e => e.id == employeeId); if (employee) openDocumentModal({ type: 'employee', target: { id: employee.id, name: employee.name } }); }
+            else if (target.id === 'add-task-btn') { const linkOptions = { none: T.noLink, ...db.cases.reduce((acc, c) => ({...acc, [`case-${c.caseId}`]: `حالة: ${c.beneficiaryName}`}), {}), ...db.meetings.reduce((acc, m) => ({...acc, [`meeting-${m.id}`]: `اجتماع: ${m.title}`}), {})}; openModal(T.addTask, createForm('modal-form', `<input type="hidden" name="formType" value="addTask">${createField(T.taskTitle, 'title')}${createSelect(T.assignedTo, 'assignedTo', db.employees.reduce((acc, e) => ({...acc, [e.id]: e.name}), {}))}${createField(T.dueDate, 'dueDate', 'date')}${createSelect(T.priority, 'priority', T.priorities)}${createSelect(T.linkTo, 'linkTo', linkOptions)}`, formButtons)); }
+            else if (target.classList.contains('edit-task-btn')) { const i = db.tasks.find(t=>t.id==target.dataset.id); if(i) { const linkOptions = { none: T.noLink, ...db.cases.reduce((acc, c) => ({...acc, [`case-${c.caseId}`]: `حالة: ${c.beneficiaryName}`}), {}), ...db.meetings.reduce((acc, m) => ({...acc, [`meeting-${m.id}`]: `اجتماع: ${m.title}`}), {})}; const currentLink = i.link ? `${i.link.type}-${i.link.id}` : 'none'; openModal(T.edit, createForm('modal-form', `<input type="hidden" name="formType" value="editTask"><input type="hidden" name="taskId" value="${i.id}">${createField(T.taskTitle, 'title', 'text', true, i.title)}${createSelect(T.assignedTo, 'assignedTo', db.employees.reduce((acc, e) => ({...acc, [e.id]: e.name}), {}), i.assignedTo)}${createField(T.dueDate, 'dueDate', 'date', true, i.dueDate)}${createSelect(T.priority, 'priority', T.priorities, i.priority)}${createSelect(T.taskStatus, 'status', T.taskStatuses, i.status)}${createSelect(T.linkTo, 'linkTo', linkOptions, currentLink)}`, formButtons)); }}
+            else if (target.id === 'add-donation-btn') openModal(T.addDonation, createForm('modal-form', `<input type="hidden" name="formType" value="addDonation">${createField(T.paymentDate, 'date', 'date', true, new Date().toISOString().slice(0,10))}${createField(T.source, 'source')}${createSelect(T.paymentType, 'type', T.paymentTypes)}${createField(T.amount, 'amount', 'number', true, '', {step: '0.001'})}`, formButtons));
+            else if (target.id === 'add-expense-btn') openModal(T.addExpense, createForm('modal-form', `<input type="hidden" name="formType" value="addExpense">${createField(T.paymentDate, 'date', 'date', true, new Date().toISOString().slice(0,10))}${createField(T.expenseDescription, 'description')}${createSelect(T.expenseCategory, 'category', T.expenseCategories)}${createField(T.amount, 'amount', 'number', true, '', {step: '0.001'})}`, formButtons));
+            else if (target.id === 'add-asset-btn') openModal(T.addAsset, createForm('modal-form', `<input type="hidden" name="formType" value="addAsset">${createField(T.assetName, 'name')}${createSelect(T.assetCategory, 'category', T.assetCategories)}${createField(T.purchaseDate, 'purchaseDate', 'date', false)}${createSelect(T.assetStatus, 'status', T.assetStatuses)}`, formButtons));
+            else if (target.classList.contains('edit-asset-btn')) { const i = db.assets.find(a=>a.id==target.dataset.id); if(i) openModal(T.edit, createForm('modal-form', `<input type="hidden" name="formType" value="editAsset"><input type="hidden" name="assetId" value="${i.id}">${createField(T.assetName, 'name', 'text', true, i.name)}${createSelect(T.assetCategory, 'category', T.assetCategories, i.category)}${createField(T.purchaseDate, 'purchaseDate', 'date', false, i.purchaseDate)}${createSelect(T.assetStatus, 'status', T.assetStatuses, i.status)}`, formButtons)); }
+            else if (target.id === 'add-meeting-btn') openModal(T.addMeeting, createForm('modal-form', `<input type="hidden" name="formType" value="addMeeting">${createField(T.meetingTitle, 'title')}${createField(T.meetingDate, 'date', 'date', true, new Date().toISOString().slice(0,10))}${createTextarea(T.attendees, 'attendees', true, '', {rows: 2})}${createTextarea(T.agenda, 'agenda')}${createTextarea(T.decisions, 'decisions')}`, formButtons), 'max-w-3xl');
+            else if (target.classList.contains('edit-meeting-btn')) { const i = db.meetings.find(m=>m.id==target.dataset.id); if(i) openModal(T.edit, createForm('modal-form', `<input type="hidden" name="formType" value="editMeeting"><input type="hidden" name="meetingId" value="${i.id}">${createField(T.meetingTitle, 'title', 'text', true, i.title)}${createField(T.meetingDate, 'date', 'date', true, i.date)}${createTextarea(T.attendees, 'attendees', true, i.attendees)}${createTextarea(T.agenda, 'agenda', true, i.agenda)}${createTextarea(T.decisions, 'decisions', true, i.decisions)}${createSelect(T.meetingStatus, 'status', T.meetingStatuses, i.status)}`, formButtons), 'max-w-3xl'); }
+            else if (target.classList.contains('view-meeting-btn')) renderMeetingDetails(target.dataset.id);
+            else if (target.id === 'add-user-btn') openModal(T.addUser, createForm('modal-form', `<input type="hidden" name="formType" value="addUser">${createField(T.employeeName, 'name')}${createField(T.username, 'username')}${createField(T.password, 'password', 'password')}${createField(T.permissions, 'permissions', '', true, '', {placeholder:'all, dashboard...'})}<p class="text-xs text-gray-500 mt-2">${T.permissionInfo}</p>`, formButtons));
+            else if (target.classList.contains('edit-user-btn')) { const u=db.users.find(i=>i.id==target.dataset.id); if(u) openModal(T.edit, createForm('modal-form', `<input type="hidden" name="formType" value="editUser"><input type="hidden" name="userId" value="${u.id}">${createField(T.employeeName, 'name', 'text', true, u.name)}${createField(T.username, 'username', 'text', true, u.username)}${createField(T.password, 'password', 'password', false, '', {placeholder:'اتركه فارغاً لعدم التغيير'})}${createField(T.permissions, 'permissions', 'text', true, u.permissions?u.permissions.join(', '):'',{placeholder:'all, dashboard...'})}<p class="text-xs text-gray-500 mt-2">${T.permissionInfo}</p>`, formButtons)); }
+            else if (target.id === 'add-document-btn') { openDocumentModal(); }
+            else if (target.classList.contains('view-doc-btn')) await previewFile(parseInt(target.dataset.id, 10));
+            else if (target.classList.contains('download-doc-btn')) { const d=await getFileById(parseInt(target.dataset.id,10)); if(d&&d.file){const u=URL.createObjectURL(d.file);const a=document.createElement('a');a.style.display='none';a.href=u;a.download=d.fileName;document.body.appendChild(a);a.click();URL.revokeObjectURL(u);a.remove()} }
+            else if (target.classList.contains('print-doc-report-btn')) { const docId = parseInt(target.dataset.docId); const caseId = target.dataset.caseId; const doc = await getFileById(docId); const caseItem = db.cases.find(c => c.caseId == caseId); if(doc && caseItem) printDocumentReport(caseItem, doc); }
+            else if (target.classList.contains('delete-btn')) { const type = target.dataset.type; const id = target.dataset.id; const confirmMsg = ['cases', 'members', 'employees', 'assets', 'meetings', 'tasks'].includes(type) ? T.deleteCascadeConfirm : T.deleteConfirm; if (confirm(confirmMsg)) { const idKeyMap = { cases: 'caseId', members: 'id', employees: 'id', financials: 'id', expenses: 'id', users: 'id', documents: 'id', assets: 'id', meetings: 'id', tasks: 'id' }; if (type === 'documents') { await deleteFileById(parseInt(id)); } else if (idKeyMap[type] && db[type]) { db[type] = db[type].filter(item => item[idKeyMap[type]] != id); await deleteFilesByAssociation(type.slice(0, -1), id); } logActivity(`حذف عنصر من ${type} برقم ${id}`); saveDB(); const activeLink = document.querySelector('.nav-link.active'); if (activeLink) await renderPage(activeLink.dataset.page); } }
+            else if (target.classList.contains('print-page-btn')) { const p = target.closest('.page'); if(p){ const a = p.querySelector('.print-area'); if(a) printWithBarcode(a.innerHTML, document.getElementById('page-title').textContent, `PAGE-${p.id.replace('page-','')}-${Date.now()}`); } }
+            else if (target.classList.contains('print-members-list-btn')) { e.preventDefault(); const format = target.dataset.format; printMembersList(format); }
+            else if (target.classList.contains('btn-whatsapp')) { const phone = target.dataset.phone; const msg = target.dataset.msg || ''; if(phone) { const fullPhone = phone.replace(/[^0-9]/g, '').startsWith('965') ? phone : `965${phone}`; window.open(`https://wa.me/${fullPhone}?text=${encodeURIComponent(msg)}`, '_blank'); } }
+            else if (target.classList.contains('notify-member-expiry')) { const member = db.members.find(m => m.id == target.dataset.memberId); if(member && member.phone) { const msg = `مرحباً ${member.name}، نود تذكيركم بأن عضوية حضرتكم في الجمعية الكويتية لحقوق الإنسان ستنتهي بتاريخ ${formatDate(member.membershipExpiry)}. يرجى المبادرة بالتجديد.`; const fullPhone = member.phone.replace(/[^0-9]/g, '').startsWith('965') ? member.phone : `965${member.phone}`; window.open(`https://wa.me/${fullPhone}?text=${encodeURIComponent(msg)}`, '_blank'); } }
+            else if (target.id === 'notification-bell-btn') { document.getElementById('notification-dropdown').classList.toggle('show'); }
+            else if (target.id === 'summarize-case-btn') { handleSummarizeCase(target); }
+            else if (target.id === 'summarize-meeting-btn') { handleSummarizeMeeting(target); }
+        });
+        document.body.addEventListener('change', (e) => { 
+            if (e.target.id === 'association-type') { 
+                const w = document.getElementById('association-target-wrapper'); const t = e.target.value; let o = {}; const m = { case: db.cases, member: db.members, employee: db.employees, asset: db.assets, meeting: db.meetings }; 
+                if (m[t]) { m[t].forEach(i => { const id = i.caseId || i.id; const n = i.beneficiaryName || i.name || i.title; o[id] = `${id} - ${n}`; }); } 
+                if (Object.keys(o).length > 0) { w.innerHTML = createSelect(T.associationTarget, 'association_target', o, '', true, 'id="association-target"'); w.classList.remove('hidden'); } else { w.innerHTML = ''; w.classList.add('hidden'); } 
+            } else if (e.target.classList.contains('table-filter')) {
+                if(e.target.closest('#page-financials') || e.target.closest('#page-expenses')) {
+                    applyFinancialFilters(e.target.closest('.page'));
+                } else {
+                    applyTableFilters(e.target.closest('.page').querySelector('table'));
+                }
+            }
+        });
+        document.body.addEventListener('keyup', (e) => { 
+            if (e.target.classList.contains('table-search')) { 
+                if(e.target.closest('#page-financials') || e.target.closest('#page-expenses')) {
+                    applyFinancialFilters(e.target.closest('.page'));
+                } else {
+                    applyTableFilters(e.target.closest('.page').querySelector('table'));
+                }
+            } 
+        });
+        document.body.addEventListener('submit', async (e) => { if(e.target.id === 'modal-form' || e.target.id === 'add-update-form') await handleFormSubmit(e) });
+    };
+    
+    const applyFinancialFilters = (page) => {
+        if (!page) return;
+        const table = page.querySelector('table');
+        if (!table) return;
+        const rows = table.querySelectorAll('tbody tr');
+        const searchInput = page.querySelector('.table-search');
+        const search = searchInput ? searchInput.value.toLowerCase() : '';
+        
+        const typeFilterEl = page.querySelector('[data-filter-column="type"]');
+        const typeFilter = typeFilterEl ? typeFilterEl.value : 'all';
+        
+        const categoryFilterEl = page.querySelector('[data-filter-column="category"]');
+        const categoryFilter = categoryFilterEl ? categoryFilterEl.value : 'all';
+        
+        const fromDateEl = page.querySelector('[data-filter-column="date_from"]');
+        const fromDate = fromDateEl ? fromDateEl.value : '';
+
+        const toDateEl = page.querySelector('[data-filter-column="date_to"]');
+        const toDate = toDateEl ? toDateEl.value : '';
+        
+        let total = 0;
+        rows.forEach(r => {
+            const textMatch = r.textContent.toLowerCase().includes(search);
+            const typeMatch = typeFilter === 'all' || r.dataset.type === typeFilter;
+            const categoryMatch = categoryFilter === 'all' || r.dataset.category === categoryFilter;
+            const date = r.dataset.date;
+            const dateMatch = (!fromDate || date >= fromDate) && (!toDate || date <= toDate);
+            
+            if (textMatch && typeMatch && categoryMatch && dateMatch) {
+                r.style.display = "";
+                const amountCell = r.querySelector('td:nth-last-child(2)');
+                if (amountCell) {
+                    total += parseFloat(amountCell.textContent) || 0;
+                }
+            } else {
+                r.style.display = "none";
+            }
+        });
+
+        if (page.id === 'page-financials') {
+            const totalOutflows = db.expenses.reduce((s,i)=>s+Number(i.amount),0);
+            page.querySelector('#total-inflows').textContent = total.toFixed(3);
+            page.querySelector('#total-outflows').textContent = totalOutflows.toFixed(3);
+            page.querySelector('#treasury-balance').textContent = (total - totalOutflows).toFixed(3);
+        }
+    };
+    
+    const printWithBarcode = (content, title, barcodeData) => { db.counters.document++; saveDB(); const docNum = db.counters.document; const dt = new Date(); const logoUrl = "https://www.kuwaithr.org/assets/logoOnIndex.svg"; const layout = `<!DOCTYPE html><html lang="ar" dir="rtl"><head><title>${title}</title><script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet"><style>@page{size:A4 portrait;margin:10mm}body{font-family:'Cairo',sans-serif;background-color:#fff;color:#1f2937;margin:0;-webkit-print-color-adjust:exact;color-adjust:exact}.print-wrapper{width:190mm;min-height:277mm;margin:auto;display:flex;flex-direction:column}.print-header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:8mm;border-bottom:3px solid #0ea5e9;margin-bottom:8mm}.header-logo img{height:50px;width:auto}.header-titles{text-align:right}.header-titles h1{font-size:22pt;font-weight:700;color:#0369a1;margin:0 0 5px 0}.header-titles p{font-size:11pt;color:#4b5563;margin:0}.print-content{flex-grow:1}.print-content table{width:100%;border-collapse:collapse;margin-top:5mm;font-size:9pt}.print-content th,.print-content td{border:1px solid #d1d5db;padding:6px 10px;text-align:right;word-break:break-word}.print-content thead{background-color:#f3f4f6;font-weight:600}.print-content tbody tr:nth-child(even){background-color:#f9fafb}.print-footer{margin-top:auto;padding-top:8mm;border-top:1px solid #d1d5db;font-size:8pt;color:#6b7280;display:flex;justify-content:space-between;align-items:center}.no-print{display:none!important}</style></head><body><div class="print-wrapper"><header class="print-header"><div class="header-titles"><h1>الجمعية الكويتية لحقوق الإنسان</h1><p>${title}</p></div><div class="header-logo"><img src="${logoUrl}" alt="Logo"></div></header><main class="print-content">${content}</main><footer class="print-footer"><div class="footer-info"><p><strong>رقم المستند:</strong> KHS-${docNum}</p><p><strong>تاريخ الطباعة:</strong> ${dt.toLocaleString('ar-KW')}</p><p style="margin-top:8px"><em>هذا المستند محمي وسري.</em></p></div><div class="footer-barcode">${barcodeData?`<svg id="barcode"></svg>`:''}</div></footer></div><script>window.onload=function(){if("${barcodeData}"){JsBarcode("#barcode","${barcodeData}",{format:"CODE128",lineColor:"#000",width:1.5,height:35,displayValue:!0,font:"Cairo",fontSize:12})}setTimeout(()=>{window.print();window.close()},250)};<\/script></body></html>`; const win = window.open('','_blank'); win.document.write(layout); win.document.close(); };
+    const printMembersList = (format) => {
+        const getFormattedName = (fullName) => {
+            const parts = fullName.trim().split(/\s+/);
+            switch (format) {
+                case 'full': return fullName;
+                case 'first_second': return parts.slice(0, 2).join(' ');
+                case 'first_second_last': 
+                    if (parts.length <= 2) return fullName;
+                    return `${parts[0]} ${parts[1]} ${parts[parts.length - 1]}`;
+                default: return fullName;
+            }
+        };
+        const tableContent = `<table class="min-w-full text-center"><thead><tr><th class="p-3">#</th><th class="p-3">الاسم</th><th class="p-3">الرقم المدني</th><th class="p-3">الهاتف</th></tr></thead><tbody>${db.members.map((m, index) => `<tr><td class="p-2 border">${index + 1}</td><td class="p-2 border">${getFormattedName(m.name)}</td><td class="p-2 border">${m.civilId}</td><td class="p-2 border">${m.phone}</td></tr>`).join('')}</tbody></table>`;
+        printWithBarcode(tableContent, 'كشف أسماء الأعضاء', `MEMBERS-LIST-${format}-${Date.now()}`);
+    };
+    
+    const navigateTo = async (pageKey) => { 
+        document.querySelectorAll('.nav-link').forEach(link => link.classList.toggle('active', link.dataset.page === pageKey)); 
+        await renderPage(pageKey); 
+        window.location.hash = pageKey; 
+    };
+
+    const applyPermissions = () => { if (!currentUser) return; const navContainer = document.getElementById('nav-links-container'); navContainer.innerHTML = ''; const navStructure = { [T.mainMenu]:{dashboard:'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',reports:'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'}, [T.management]:{cases:'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01',members:'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z',employees:'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M15 21v-4.5A5.5 5.5 0 009.5 12.5', tasks: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 00-2-2V3m0 2v.01M12 12a2 2 0 100-4 2 2 0 000 4zm0 6a2 2 0 100-4 2 2 0 000 4z', assets:'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2H5a2 2 0 00-2 2v2m14 0h-2m-2 0h-2m-2 0H9m-2 0H5', meetings:'M16 4v12l-4-2-4 2V4M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z', financials:'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z',expenses:'M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z',documentArchive:'M4 7v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2h-4.586a1 1 0 01-.707-.293l-1.414-1.414A1 1 0 009.586 5H6c-1.1 0-2 .9-2 2z'}, [T.advanced]:{greetings: 'M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z', activityLog:'M4 6h16M4 12h16M4 18h7',settings:'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z'} }; const hasAccess = (pk) => currentUser.permissions.includes('all') || currentUser.permissions.includes(pk); for (const [mt, ps] of Object.entries(navStructure)) { const ap = Object.keys(ps).filter(hasAccess); if (ap.length > 0) { navContainer.innerHTML += `<p class="sidebar-heading">${mt}</p>`; ap.forEach(pk => navContainer.innerHTML += `<a href="#${pk}" data-page="${pk}" class="nav-link flex items-center p-3 my-1 rounded-lg"><svg class="w-6 h-6 ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${ps[pk]}"></path></svg><span>${T[pk]}</span></a>`); } } document.querySelectorAll('[data-permission]').forEach(el => { const p = el.dataset.permission; if (p && !hasAccess(p)) {el.style.display = 'none';} else {el.style.display = '';} }); navContainer.addEventListener('click', async (e) => { const link = e.target.closest('.nav-link'); if (link) { e.preventDefault(); await navigateTo(link.dataset.page); } }); };
+    
+    const updateNotificationBell = () => {
+        const { alerts, myTasks } = getNotifications();
+        const count = alerts.length + myTasks.length;
+        const badge = document.getElementById('notification-badge');
+        const dropdown = document.getElementById('notification-dropdown');
+        
+        if (count > 0) {
+            badge.textContent = count;
+            badge.classList.remove('hidden');
+        } else {
+            badge.classList.add('hidden');
+        }
+
+        let dropdownHtml = '<div class="p-2 text-center text-sm font-bold bg-gray-50">الإشعارات</div>';
+        if (count === 0) {
+            dropdownHtml += '<div class="p-4 text-center text-gray-500">لا توجد إشعارات جديدة.</div>';
+        } else {
+            alerts.forEach(alert => {
+                const expiryType = T[alert.type === 'residency' ? 'residencyExpiry' : 'membershipExpiry'];
+                dropdownHtml += `<div class="p-3 border-b hover:bg-gray-100"><p class="text-sm font-semibold text-amber-700">${expiryType}</p><p class="text-sm">${alert.item.name}</p><p class="text-xs text-gray-500">${alert.daysLeft > 0 ? `باقي ${alert.daysLeft} يوم` : 'منتهي'}</p></div>`;
+            });
+            myTasks.forEach(task => {
+                dropdownHtml += `<div class="p-3 border-b hover:bg-gray-100"><p class="text-sm font-semibold text-sky-700">مهمة جديدة</p><p class="text-sm">${task.title}</p><p class="text-xs text-gray-500">تاريخ الاستحقاق: ${formatDate(task.dueDate)}</p></div>`;
+            });
+        }
+        dropdown.innerHTML = dropdownHtml;
+    };
+    
+    const init = async () => {
+        loadLocalStorageDB(); try { await initFilesDB(); } catch (error) { showToast('فشل تهيئة قاعدة بيانات الملفات!', 'error'); return; }
+        const loginForm = document.getElementById('login-form'); const usernameSelect = document.getElementById('username-select');
+        usernameSelect.innerHTML += db.users.map(user => `<option value="${user.username}">${user.name}</option>`).join('');
+        loginForm.addEventListener('submit', async (e) => { e.preventDefault(); const username = usernameSelect.value; const password = document.getElementById('password-input').value; const user = db.users.find(u => u.username === username && u.password === password); if (user) { currentUser = user; document.getElementById('login-overlay').style.display = 'none'; document.getElementById('app-container').classList.remove('hidden'); document.getElementById('current-user-name').textContent = currentUser.name; logActivity('تسجيل الدخول'); saveDB(); applyPermissions(); setupEventListeners(); const initialPage = (window.location.hash.substring(1) && (currentUser.permissions.includes('all') || currentUser.permissions.includes(window.location.hash.substring(1)))) ? window.location.hash.substring(1) : 'dashboard'; await navigateTo(initialPage); showStartupNotifications(); updateNotificationBell(); const updateClock = () => { document.getElementById('live-clock').textContent = `${new Date().toLocaleDateString('ar-KW',{weekday:'long',day:'numeric',month:'long'})} | ${new Date().toLocaleTimeString('ar-KW',{hour:'2-digit',minute:'2-digit'})}`; }; updateClock(); setInterval(updateClock, 60000); } else { document.getElementById('login-error').classList.remove('hidden'); } });
+        window.addEventListener('hashchange', async () => { const pageKey = window.location.hash.substring(1) || 'dashboard'; if (currentUser && (currentUser.permissions.includes('all') || currentUser.permissions.includes(pageKey))) await navigateTo(pageKey); });
+        document.getElementById('restore-btn').addEventListener('click', () => document.getElementById('restore-input').click());
+    };
+    
+    window.logout = () => { if (confirm('هل أنت متأكد من رغبتك في تسجيل الخروج؟')) { logActivity('تسجيل الخروج'); saveDB(); currentUser = null; location.reload(); } };
+    window.restoreData = (event) => { const file = event.target.files[0]; if (!file || !confirm(T.restoreWarning)) { event.target.value = null; return; } const reader = new FileReader(); reader.onload = (e) => { try { const restoredDb = JSON.parse(e.target.result); if (restoredDb && Array.isArray(restoredDb.users)) { localStorage.setItem(DB_NAME, e.target.result); showToast(T.restoreSuccess); setTimeout(() => location.reload(), 1500); } else { showToast(T.fileError, 'error'); } } catch (err) { showToast(T.fileError, 'error'); } finally { event.target.value = null; } }; reader.readAsText(file); };
+    document.getElementById('backup-btn').addEventListener('click', () => { const dataStr = localStorage.getItem(DB_NAME); const blob = new Blob([dataStr], { type: "application/json" }); const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.download = `Karamah_Backup_${new Date().toISOString().slice(0, 10)}.json`; link.href = url; link.click(); URL.revokeObjectURL(url); showToast(T.backupSuccess); });
+    
+    // Gemini API Functions
+    const callGeminiAPI = async (prompt) => {
+        let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+        const payload = { contents: chatHistory };
+        const apiKey = ""; // API key is handled by the environment
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+        
+        try {
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
+            
+            if (result.candidates && result.candidates.length > 0 &&
+                result.candidates[0].content && result.candidates[0].content.parts &&
+                result.candidates[0].content.parts.length > 0) {
+                return result.candidates[0].content.parts[0].text;
+            } else {
+                console.error("Unexpected Gemini API response structure:", result);
+                return "لم يتمكن الذكاء الاصطناعي من إنشاء ملخص. يرجى المحاولة مرة أخرى.";
+            }
+        } catch (error) {
+            console.error("Error calling Gemini API:", error);
+            return "حدث خطأ أثناء الاتصال بخدمة الذكاء الاصطناعي.";
+        }
+    };
+
+    const handleSummarizeCase = async (button) => {
+        const caseId = button.closest('.modal-content').querySelector('input[name="caseId"]')?.value || button.dataset.caseId;
+        const caseItem = db.cases.find(c => c.caseId == caseId);
+        if (!caseItem) return;
+
+        const summaryContainer = document.getElementById('gemini-summary-container');
+        summaryContainer.innerHTML = `<p class="text-center">${T.generatingSummary}</p>`;
+        summaryContainer.classList.remove('hidden');
+
+        const updatesText = caseItem.updates.map(u => `في تاريخ ${formatDateTime(u.updateDate)}، قام ${u.updatedBy} بالإجراء التالي: ${u.details}`).join('\n');
+        const prompt = `بصفتك مساعدًا قانونيًا في جمعية لحقوق الإنسان، قم بتلخيص الحالة التالية بشكل احترافي وموجز باللغة العربية. ابدأ بملخص قصير للحالة، ثم اذكر أهم الإجراءات المتخذة بترتيب زمني:\n\nوصف الحالة الأولي: ${caseItem.description}\n\nسجل الإجراءات:\n${updatesText}`;
+        
+        const summary = await callGeminiAPI(prompt);
+        summaryContainer.innerHTML = `<h4 class="text-lg font-bold mb-2">${T.caseSummary}</h4><div class="bg-purple-50 p-4 rounded-lg border-r-4 border-purple-400 whitespace-pre-wrap">${summary}</div>`;
+    };
+
+    const handleSummarizeMeeting = async (button) => {
+        const meetingId = button.closest('.modal-content').querySelector('input[name="meetingId"]')?.value || button.dataset.meetingId;
+        const meetingItem = db.meetings.find(m => m.id == meetingId);
+        if (!meetingItem) return;
+
+        const summaryContainer = document.getElementById('gemini-summary-container');
+        summaryContainer.innerHTML = `<p class="text-center">${T.generatingSummary}</p>`;
+        summaryContainer.classList.remove('hidden');
+
+        const prompt = `بصفتك سكرتير اجتماع، قم بتلخيص النقاط الرئيسية والقرارات المتخذة في الاجتماع التالي على شكل قائمة نقطية باللغة العربية:\n\nجدول الأعمال:\n${meetingItem.agenda}\n\nالقرارات والتوصيات:\n${meetingItem.decisions}`;
+        
+        const summary = await callGeminiAPI(prompt);
+        summaryContainer.innerHTML = `<h4 class="text-lg font-bold mb-2">${T.meetingSummary}</h4><div class="bg-purple-50 p-4 rounded-lg border-r-4 border-purple-400 whitespace-pre-wrap">${summary}</div>`;
+    };
+
+    init();
+});
+    </script>
+</body>
+</html>
